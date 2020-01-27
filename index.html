@@ -78,16 +78,54 @@
             `);
           } else if (commandid == 3) {
             html_tablerow = html_tablerow.replace("<COMMAND>", "Mod Key Press");
-            html_tablerow = html_tablerow.replace("<VALUE>",
-                                    `<input name="mkp" class="p-0 my-3 mx-2" min="0" style="max-width: 95%; width: 95%;" max="65536" type="number"></input>
-            `);
           } else if (commandid == 4) {
             html_tablerow = html_tablerow.replace("<COMMAND>", "Mod Key Release");
-            html_tablerow = html_tablerow.replace("<VALUE>",
-                                    `<input name="mkr" class="p-0 my-3 mx-2" min="0" style="max-width: 95%; width: 95%;" max="65536" type="number"></input>
-            `);
           } else {
             return false;
+          }
+
+          if (commandid == 3 || commandid == 4) {
+            html_tablerow = html_tablerow.replace("<VALUE>",`
+              <select class="form-control p-0 my-3 mx-2 selectList">
+                <!-- TODO: complete list -->
+                <!-- https://raw.githubusercontent.com/D0n1elT/ArduinoMakrotastatur/master/src/MakroKeyboard.cpp -->
+                <option>128 - KEY_LEFT_CTRL</option>
+                <option>129 - KEY_LEFT_SHIFT</option>
+                <option>130 - KEY_LEFT_ALT</option>
+                <option>131 - KEY_LEFT_GUI</option>
+                <option>132 - KEY_RIGHT_CTRL</option>
+                <option>133 - KEY_RIGHT_SHIFT</option>
+                <option>134 - KEY_RIGHT_ALT</option>
+                <option>135 - KEY_RIGHT_GUI</option>
+                <option>176 - KEY_RETURN</option>
+                <option>177 - KEY_ESC</option>
+                <option>KEY_BACKSPACE</option>
+                <option>KEY_TAB</option>
+                <option>KEY_RIGHT_ARROW</option>
+                <option>KEY_LEFT_ARROW</option>
+                <option>KEY_DOWN_ARROW</option>
+                <option>KEY_UP_ARROW</option>
+                <option>KEY_INSERT</option>
+                <option>KEY_DELETE</option>
+                <option>KEY_PAGE_UP</option>
+                <option>KEY_PAGE_DOWN</option>
+                <option>KEY_HOME</option>
+                <option>KEY_END</option>
+                <option>KEY_CAPS_LOCK</option>
+                <option>KEY_F1</option>
+                <option>KEY_F2</option>
+                <option>KEY_F3</option>
+                <option>KEY_F4</option>
+                <option>KEY_F5</option>
+                <option>KEY_F6</option>
+                <option>KEY_F7</option>
+                <option>KEY_F8</option>
+                <option>KEY_F9</option>
+                <option>KEY_F10</option>
+                <option>KEY_F11</option>
+                <option>KEY_F12</option>
+              </select>`
+            );
           }
 
           html_tablerow = html_tablerow.replace("<CMNDID>", commandid);
