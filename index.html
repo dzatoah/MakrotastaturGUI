@@ -2,16 +2,114 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
-    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'">-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Hello World!</title>
+
+    <!-- Bootstrap! -->
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <!-- /bootstrap... -->
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
   </head>
+
   <body>
-    <h1>Hello World!</h1>
-    We are using Node.js <span id="node-version"></span>,
-    Chromium <span id="chrome-version"></span>,
-    and Electron <span id="electron-version"></span>.
+    <main class="main p-3 m-3">
+      <h3>Makrotastur</h3>
+
+      <form action="#">
+        <table id="programList" class='w-100 text-center'>
+          <tr>
+            <th style="border-bottom: 1px solid black; border-right: 1px solid black; width: 25%">
+              command
+            </th>
+            <th style="border-bottom: 1px solid black;">
+              value
+            </th>
+          </tr>
+        </table>
+        <input class="mt-2 p-2 btn btn-secondary" type="submit"></input>
+      </form>
+
+      <div class="m-0 mt-3 row w-100">
+        <button type="button" class="col mr-2 btn btn-secondary" onclick="if(addCommand(1) === false)alert('Etwas ging schief.')">String</button>
+        <button type="button" class="col mr-2 btn btn-secondary" onclick="if(addCommand(2) === false)alert('Etwas ging schief.')">Delay</button>
+        <button type="button" class="col mr-2 btn btn-secondary" onclick="if(addCommand(3) === false)alert('Etwas ging schief.')">Mod Key Press</button>
+        <button type="button" class="col btn btn-secondary"      onclick="if(addCommand(4) === false)alert('Etwas ging schief.')">Mod Key Release</button>
+      </div>
+
+      <script>
+        Sortable.create(programList, {
+          animation: 250,
+          draggable: 'tr',
+          sort: true,
+          chosenClass: 'active',
+          ghostClass: "ghost",
+          handle: "#commandlabel"
+        });
+
+        function addCommand(commandid) {
+          html_tablerow = `
+              <tr commandid="<CMNDID>" style="width: 75%; border-top: 1px solid gray;" class='p-0 pl-2 pr-2 pt-2 m-0'>
+                <td id="commandlabel" class='m-0 p-0' style="border-right: 1px solid black;">
+                  <img src="imgs/movable.png" alt="::" style="max-width: 20px; filter: opacity(50%);" class="m-0 p-0 d-inline-block float-left"></img> <COMMAND>
+                </td>
+                <td id="value">
+                  <VALUE>
+                </td>
+              </tr>`;
+
+          if (commandid == 1) {
+            html_tablerow = html_tablerow.replace("<COMMAND>", "String");
+            html_tablerow = html_tablerow.replace("<VALUE>",
+                                    `<!-- pattern='[\\w,.!?+\\-#*\\s]+' -->
+                                     <textarea name="string" class='m-0 p-0 mt-2 mx-2' type='text' wrap='' style='max-width:95%; width:95%;'></textarea>
+                                     <p class='text-muted text-right mr-3 pb-0 mb-0' style='font-size: 80%;'>do not use special characters except punctuation marks</p>
+            `);
+          } else if (commandid == 2) {
+            html_tablerow = html_tablerow.replace("<COMMAND>", "Delay");
+            html_tablerow = html_tablerow.replace("<VALUE>",
+                                    `<input name="time" class="p-0 my-3 mx-2" min="0" style="max-width: 95%; width: 95%;" max="65536" type="number"></input>
+            `);
+          } else if (commandid == 3) {
+            html_tablerow = html_tablerow.replace("<COMMAND>", "Mod Key Press");
+            html_tablerow = html_tablerow.replace("<VALUE>",
+                                    `<input name="mkp" class="p-0 my-3 mx-2" min="0" style="max-width: 95%; width: 95%;" max="65536" type="number"></input>
+            `);
+          } else if (commandid == 4) {
+            html_tablerow = html_tablerow.replace("<COMMAND>", "Mod Key Release");
+            html_tablerow = html_tablerow.replace("<VALUE>",
+                                    `<input name="mkr" class="p-0 my-3 mx-2" min="0" style="max-width: 95%; width: 95%;" max="65536" type="number"></input>
+            `);
+          } else {
+            return false;
+          }
+
+          html_tablerow = html_tablerow.replace("<CMNDID>", commandid);
+          $("#programList").append(html_tablerow);
+
+          return true;
+        }
+      </script>
+    </main>
+
+    <style>
+      #programList tr {
+        margin-bottom: 2px !important;
+      }
+      .ghost {
+        opacity: 0.4;
+      }
+      .active {
+        border: 2px solid grey !important;
+        margin-bottom: 0px !important;
+      }
+    </style>
 
     <!-- You can also require other files to run in this process -->
     <script src="./renderer.js"></script>
