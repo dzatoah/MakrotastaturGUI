@@ -16,138 +16,41 @@
     <!-- /bootstrap... -->
 
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <link rel="stylesheet" href="src/btn-arrows.css">
   </head>
 
   <body>
-    <main class="main p-3 m-3">
-      <h3>Makrotastur</h3>
+    <main class="main pt-2 px-1 m-0 mb-2 p-md-3 m-md-3">
+      <h3 class="text-right">Makrotastatur - Startseite</h3>
+      <hr></hr>
 
-      <form action="#">
-        <table id="programList" class='w-100 text-center'>
-          <tr>
-            <th style="border-bottom: 1px solid black; border-right: 1px solid black; width: 25%">
-              command
-            </th>
-            <th style="border-bottom: 1px solid black;">
-              value
-            </th>
-          </tr>
-        </table>
-        <input class="mt-2 p-2 btn btn-secondary" type="submit"></input>
-      </form>
-
-      <div class="m-0 mt-3 row w-100">
-        <button type="button" class="col mr-2 btn btn-secondary" onclick="if(addCommand(1) === false)alert('Etwas ging schief.')">String</button>
-        <button type="button" class="col mr-2 btn btn-secondary" onclick="if(addCommand(2) === false)alert('Etwas ging schief.')">Delay</button>
-        <button type="button" class="col mr-2 btn btn-secondary" onclick="if(addCommand(3) === false)alert('Etwas ging schief.')">Mod Key Press</button>
-        <button type="button" class="col btn btn-secondary"      onclick="if(addCommand(4) === false)alert('Etwas ging schief.')">Mod Key Release</button>
-      </div>
+      <button onclick="buttonClick()" class="btn btn-dark">Select Button</button>
 
       <script>
-        Sortable.create(programList, {
-          animation: 250,
-          draggable: 'tr',
-          sort: true,
-          chosenClass: 'active',
-          ghostClass: "ghost",
-          handle: "#commandlabel"
-        });
+        var deviceFound = false;
+        function buttonClick() {
+          window.Bridge.getSerialCOMsList().then(function(data){
+            data.forEach(function(device){
+              if (device.manufacturer == "SparkFun" && device.serialNumber == "HIDPC") {
+                console.log("Found a COM-Device: " + device.pnpId + " @ " + device.path);
+                deviceFound = true;
+                window.Bridge.setCOMPath(device.path);
 
-        function addCommand(commandid) {
-          html_tablerow = `
-              <tr commandid="<CMNDID>" style="width: 75%; border-top: 1px solid gray;" class='p-0 pl-2 pr-2 pt-2 m-0'>
-                <td id="commandlabel" class='m-0 p-0' style="border-right: 1px solid black;">
-                  <img src="imgs/movable.png" alt="::" style="max-width: 20px; filter: opacity(50%);" class="m-0 p-0 d-inline-block float-left"></img> <COMMAND>
-                </td>
-                <td id="value">
-                  <VALUE>
-                </td>
-              </tr>`;
+                window.Bridge.onDataReceive = function(msg){console.log("lol: " + msg);}
+                window.Bridge.onOpen = function() {
+                  console.log("Nice it opened!")
+                  window.Bridge.sendMessage("lol");
+                };
 
-          if (commandid == 1) {
-            html_tablerow = html_tablerow.replace("<COMMAND>", "String");
-            html_tablerow = html_tablerow.replace("<VALUE>",
-                                    `<!-- pattern='[\\w,.!?+\\-#*\\s]+' -->
-                                     <textarea name="string" class='m-0 p-0 mt-2 mx-2' type='text' wrap='' style='max-width:95%; width:95%;'></textarea>
-                                     <p class='text-muted text-right mr-3 pb-0 mb-0' style='font-size: 80%;'>do not use special characters except punctuation marks</p>
-            `);
-          } else if (commandid == 2) {
-            html_tablerow = html_tablerow.replace("<COMMAND>", "Delay");
-            html_tablerow = html_tablerow.replace("<VALUE>",
-                                    `<input name="time" class="p-0 my-3 mx-2" min="0" style="max-width: 95%; width: 95%;" max="65536" type="number"></input>
-            `);
-          } else if (commandid == 3) {
-            html_tablerow = html_tablerow.replace("<COMMAND>", "Mod Key Press");
-          } else if (commandid == 4) {
-            html_tablerow = html_tablerow.replace("<COMMAND>", "Mod Key Release");
-          } else {
-            return false;
-          }
-
-          if (commandid == 3 || commandid == 4) {
-            html_tablerow = html_tablerow.replace("<VALUE>",`
-              <select class="form-control p-0 my-3 mx-2 selectList">
-                <!-- TODO: complete list -->
-                <!-- https://raw.githubusercontent.com/D0n1elT/ArduinoMakrotastatur/master/src/MakroKeyboard.cpp -->
-                <option>128 - KEY_LEFT_CTRL</option>
-                <option>129 - KEY_LEFT_SHIFT</option>
-                <option>130 - KEY_LEFT_ALT</option>
-                <option>131 - KEY_LEFT_GUI</option>
-                <option>132 - KEY_RIGHT_CTRL</option>
-                <option>133 - KEY_RIGHT_SHIFT</option>
-                <option>134 - KEY_RIGHT_ALT</option>
-                <option>135 - KEY_RIGHT_GUI</option>
-                <option>176 - KEY_RETURN</option>
-                <option>177 - KEY_ESC</option>
-                <option>KEY_BACKSPACE</option>
-                <option>KEY_TAB</option>
-                <option>KEY_RIGHT_ARROW</option>
-                <option>KEY_LEFT_ARROW</option>
-                <option>KEY_DOWN_ARROW</option>
-                <option>KEY_UP_ARROW</option>
-                <option>KEY_INSERT</option>
-                <option>KEY_DELETE</option>
-                <option>KEY_PAGE_UP</option>
-                <option>KEY_PAGE_DOWN</option>
-                <option>KEY_HOME</option>
-                <option>KEY_END</option>
-                <option>KEY_CAPS_LOCK</option>
-                <option>KEY_F1</option>
-                <option>KEY_F2</option>
-                <option>KEY_F3</option>
-                <option>KEY_F4</option>
-                <option>KEY_F5</option>
-                <option>KEY_F6</option>
-                <option>KEY_F7</option>
-                <option>KEY_F8</option>
-                <option>KEY_F9</option>
-                <option>KEY_F10</option>
-                <option>KEY_F11</option>
-                <option>KEY_F12</option>
-              </select>`
-            );
-          }
-
-          html_tablerow = html_tablerow.replace("<CMNDID>", commandid);
-          $("#programList").append(html_tablerow);
-
-          return true;
+                window.Bridge.openSerialConnection();
+              }
+            });
+          });
+          setTimeout(function(){ if(deviceFound == false){console.error("No device found!");} }, 2000);
         }
       </script>
     </main>
-
-    <style>
-      #programList tr {
-        margin-bottom: 2px !important;
-      }
-      .ghost {
-        opacity: 0.4;
-      }
-      .active {
-        border: 2px solid grey !important;
-        margin-bottom: 0px !important;
-      }
-    </style>
 
     <!-- You can also require other files to run in this process -->
     <script src="./renderer.js"></script>
