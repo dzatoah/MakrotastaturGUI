@@ -2,20 +2,14 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
-    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'">-->
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline'; script-src * 'self' 'unsafe-inline'">
+    <meta http-equiv="X-Content-Security-Policy" content="default-src * 'self' 'unsafe-inline'; script-src * 'self' 'unsafe-inline'">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Hello World!</title>
+    <title>Makrotastatur Programmier-GUI</title>
 
-    <!-- Bootstrap! -->
-    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-    <!-- /bootstrap... -->
-
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <!--<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>-->
 
     <link rel="stylesheet" href="btn-arrows.css">
   </head>
@@ -23,7 +17,7 @@
   <body>
     <main class="main pt-2 px-1 m-0 mb-2 p-md-3 m-md-3">
       <button class="float-left btn-arrow-left mx-3 btn btn-dark" onclick="history.back()">Zurück</button>
-      <h3 class="text-right">Makrotastatur - Taster programmieren</h3>
+      <h3 class="text-right">Makrotastatur - Taster bearbeiten</h3>
       <hr></hr>
 
       <form id="programForm" action="#">
@@ -48,27 +42,19 @@
       </form>
 
       <script>
-        function submitForm(event) {
-          $( ".textarea-validate" ).each(function( index ) {
-            console.log( index + ": " + $( this ).val() );
-            validateTextarea(this);
-            if (!this.validity.valid) {
-              console.log("PREVENT SUBMIT");
-              if (event != null) event.preventDefault();
-            }
+        window.addEventListener('DOMContentLoaded', () => {
+          $('#programForm').submit(function( event ) {
+            submitForm(event, this);
           });
-        }
-        $('#programForm').submit(function( event ) {
-          submitForm(event, this);
-        });
 
-        Sortable.create(programList, {
-          animation: 250,
-          draggable: 'tr',
-          sort: true,
-          chosenClass: 'active',
-          ghostClass: "ghost",
-          handle: "#commandlabel"
+          Sortable.create(programList, {
+            animation: 200,
+            draggable: 'tr',
+            sort: true,
+            chosenClass: 'active',
+            ghostClass: "ghost",
+            handle: "#commandlabel"	
+          });
         });
 
         function addCommand(commandid) {
@@ -149,33 +135,6 @@
 
           return true;
         }
-
-        /*function validateTextarea(element) {
-          var textarea = element;
-          var errorMsg = "Please match the format requested.";
-          var pattern = new RegExp('^' + $(textarea).attr('pattern') + '$');
-          // check each line of text
-          $.each($(textarea).val().split("\n"), function () {
-              // check if the line matches the pattern
-              var hasError = !this.match(pattern);
-              if (hasError) {
-                console.log("Fuck: " + textarea);
-              }
-              if (typeof textarea.setCustomValidity === 'function') {
-                  textarea.setCustomValidity(hasError ? errorMsg : '');
-              } else {
-                  // Not supported by the browser, fallback to manual error display...
-                  $(textarea).toggleClass('error', !!hasError);
-                  $(textarea).toggleClass('ok', !hasError);
-                  if (hasError) {
-                      $(textarea).attr('title', errorMsg);
-                  } else {
-                      $(textarea).removeAttr('title');
-                  }
-              }
-              return !hasError;
-          });
-        }*/
       </script>
     </main>
 

@@ -4,7 +4,7 @@
   "description": "A minimal Electron application",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron . --inspect"
   },
   "repository": "https://github.com/electron/electron-quick-start",
   "keywords": [
@@ -21,8 +21,11 @@
     "electron-rebuild": "^1.9.0"
   },
   "dependencies": {
+    "bootstrap": "^4.4.1",
     "jquery": "^3.4.1",
     "mdbootstrap": "^4.12.0",
-    "serialport": "^8.0.6"
+    "popper.js": "^1.16.1",
+    "serialport": "^8.0.6",
+    "sortablejs": "^1.10.2"
   }
 }

@@ -1,7 +1,6 @@
 // All of the Node.js APIs are available in the preload process.
 // It has the same sandbox as a Chrome extension.
 
-
 const SerialPort = require('serialport');
 const parsers = SerialPort.parsers
 
@@ -14,6 +13,10 @@ port = null;
 comPath = null;
 
 window.addEventListener('DOMContentLoaded', () => {
+  window.$ = window.jQuery = require('jquery');
+  window.Bootstrap = require('bootstrap');
+  window.Sortable = require('sortablejs');
+
   window.Bridge = {
     openSerialConnection: openSerialConnection,
     onDataReceive: console.log,
@@ -21,12 +24,22 @@ window.addEventListener('DOMContentLoaded', () => {
     sendMessage: sendMessage,
     getSerialCOMsList: getSerialCOMsList,
     setCOMPath: setCOMPath,
+    isPortOpen: isOpen,
     onOpen: onOpen,
+    onError: onError,
   };
 })
 
+function isOpen() {
+  return (port != null && port.isOpen);
+}
+
 function onOpen() {
   console.log(comPath + " port opened!");
+}
+
+function onError(message) {
+  console.error(message);
 }
 
 function setCOMPath(path){
@@ -42,7 +55,7 @@ function sendMessage(message) {
   if (port.isOpen) {
     port.write(message);
   } else {
-    console.error("Tried to send message but port wasn't open!");
+    window.Bridge.onError("Tried to send message but port wasn't open!");
   }
 }
 
@@ -61,18 +74,18 @@ function openSerialConnection() {
         autoOpen: false,
       });
       port.pipe(parser);
+
+      port.open(function (err) {
+        if (err) {
+          return window.Bridge.onError('Ein Fehler trat beim öffnen des seriellen Ports auf.', err.message)
+        }
+      });
+
+      updateEvents();
     } else {
-      console.error("Tried to open port but comPath isn't even set!");
+      window.Bridge.onError("Tried to open port but comPath isn't even set!");
     }
-
-    port.open(function (err) {
-      if (err) {
-        return console.error('Error opening port: ', err.message)
-      }
-    });
-
-    updateEvents();
   } else {
-    console.log("Port is already open!");
+    window.Bridge.onError("Port is already open!");
   }
 }

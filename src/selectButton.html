@@ -2,20 +2,14 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
-    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'">-->
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline'; script-src * 'self' 'unsafe-inline'">
+    <meta http-equiv="X-Content-Security-Policy" content="default-src * 'self' 'unsafe-inline'; script-src * 'self' 'unsafe-inline'">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Hello World!</title>
+    <title>Makrotastatur Programmier-GUI</title>
 
-    <!-- Bootstrap! -->
-    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-    <!-- /bootstrap... -->
-
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <!--<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>-->
 
     <link rel="stylesheet" href="btn-arrows.css">
   </head>
@@ -49,41 +43,6 @@
                   Wert
                 </th>
               </tr>
-              <tr commandid="string" style="width: 75%; border-top: 1px solid gray;" class='p-0 pl-2 pr-2 pt-2 m-0'>
-                <td id="commandlabel" class='m-0 p-0' style="border-right: 1px solid black;">
-                  String
-                </td>
-                <td id="value">
-                  Hallo, wunderschoener Text hier, oder?
-                </td>
-              </tr>
-
-              <tr commandid="delay" style="width: 75%; border-top: 1px solid gray;" class='p-0 pl-2 pr-2 pt-2 m-0'>
-                <td id="commandlabel" class='m-0 p-0' style="border-right: 1px solid black;">
-                  Delay
-                </td>
-                <td id="value">
-                  2000
-                </td>
-              </tr>
-
-              <tr commandid="delay" style="width: 75%; border-top: 1px solid gray;" class='p-0 pl-2 pr-2 pt-2 m-0'>
-                <td id="commandlabel" class='m-0 p-0' style="border-right: 1px solid black;">
-                  Mod Key Press
-                </td>
-                <td id="value">
-                  128 - LEFT CTRL
-                </td>
-              </tr>
-
-              <tr commandid="string" style="width: 75%; border-top: 1px solid gray;" class='p-0 pl-2 pr-2 pt-2 m-0'>
-                <td id="commandlabel" class='m-0 p-0' style="border-right: 1px solid black;">
-                  String
-                </td>
-                <td id="value">
-                  Okay wow! Das wird echt ein etwas laengerer Text, lol. Es war ein mal ein kleiner Pilz. Dieser Pilz war stehts auf der Suche nach Pilz, um sich richtig zu besaufen.
-                </td>
-              </tr>
             </table>
             <button onclick="location.href='programButton.html'" class="w-100 rounded-0 mt-auto btn btn-success">Bearbeiten</button>
           </div>
@@ -106,23 +65,63 @@
       </div>
 
       <script>
-        function loadButton(buttonID){
+        buttonID = -1;
+
+        function loadButton(btnID){
           var button = $("#button"+buttonID);
           if (button.hasClass("disabled")) {
             // Prevent double clicks
             return;
           }
 
-          var html_tablerow = `
-              <tr commandid="`+buttonID+`" style="width: 75%; border-top: 1px solid gray;" class='p-0 pl-2 pr-2 pt-2 m-0'>
-                <td id="commandlabel" class='m-0 p-0' style="border-right: 1px solid black;">
-                  Knopf
-                </td>
-                <td id="value">
-                  ` + (buttonID + 1) +`
-                </td>
-              </tr>`;
-          $("#programList").append(html_tablerow);
+          buttonID = btnID;
+          $("#programList .cmndTr").remove();
+
+          if (!window.Bridge.isPortOpen()) {
+            var devicePath = localStorage.getItem('devicePath');
+            if (devicePath == undefined || devicePath == null) {
+              console.error("Oh oh! Sieht so aus als würde devicePath nichts im localStorage gesetzt sein.");
+              return;
+            }
+            console.log("Stelle Verbindung mit '"+devicePath+"' her.");
+
+            window.Bridge.setCOMPath(devicePath);
+
+
+            window.Bridge.onOpen = function() {
+              console.log("Verbindung zu Gerät '" + devicePath + "' geöffnet!");
+              window.Bridge.sendMessage("GETBUTTONS");
+            };
+
+            window.Bridge.onDataReceive = function(msg){
+              console.log("<tastatur>: " + msg);
+
+              msg = msg.split(";", 3);
+              buttonid = msg[0];
+              cmnd_str = msg[1];
+              value = msg[2];
+              console.log(buttonID + "=" + buttonid + " " + cmnd_str + " " + value);
+
+              if (buttonid == buttonID) {
+                console.log("Befehl erkannt. '" + cmnd_str + "': '" + value + "'");
+
+                var html_tablerow = `
+                    <tr command="`+cmnd_str+`" style="width: 75%; border-top: 1px solid gray;" class='cmndTr p-0 pl-2 pr-2 pt-2 m-0'>
+                      <td id="commandlabel" class='m-0 p-1' style="border-right: 1px solid black;">
+                        `+cmnd_str+`
+                      </td>
+                      <td id="value" class="p-1">
+                        ` + value +`
+                      </td>
+                    </tr>`;
+                $("#programList").append(html_tablerow);
+              }
+            }
+
+            window.Bridge.openSerialConnection();
+          } else {
+            window.Bridge.sendMessage("GETBUTTONS");
+          }
 
           // Remove class from every other button
           $("#buttonSelectList .btn").each(function(){
@@ -131,6 +130,85 @@
 
           button.addClass("disabled");
           window.scrollTo({ left: 0, top: document.body.scrollHeight, behavior: "smooth" });
+        }
+
+        function addCommand(commandid) {
+          html_tablerow = `
+              <tr commandid="<CMNDID>" style="width: 75%; border-top: 1px solid gray;" class='p-0 pl-2 pr-2 pt-2 m-0'>
+                <td id="commandlabel" class='m-0 p-0' style="border-right: 1px solid black;">
+                  <img src="imgs/movable.png" alt="::" style="max-width: 20px; filter: opacity(50%);" class="m-0 p-0 d-inline-block float-left"></img> <COMMAND>
+                </td>
+                <td id="value">
+                  <VALUE>
+                </td>
+              </tr>`;
+
+          if (commandid == 1) {
+            html_tablerow = html_tablerow.replace("<COMMAND>", "String");
+            html_tablerow = html_tablerow.replace("<VALUE>",
+                                    `<!-- pattern='[\\w,.!?+\\-#*\\s]+' -->
+                                     <input name="string" class='p-1 m-0 mt-2 mx-2 form-control d-inline-block' type='text' wrap='off' pattern='[\\w,.!?+\\-#*\\s]+' style='max-width:95%; width:95%;'></input>
+                                     <p class='text-muted text-right mr-3 pb-0 mb-0' style='font-size: 80%;'>do not use special characters except punctuation marks</p>
+            `);
+          } else if (commandid == 2) {
+            html_tablerow = html_tablerow.replace("<COMMAND>", "Delay");
+            html_tablerow = html_tablerow.replace("<VALUE>",
+                                    `<input name="time" class="p-1 my-3 mx-2 form-control d-inline-block" min="0" style="max-width: 95%; width: 95%;" max="65536" type="number"></input>
+            `);
+          } else if (commandid == 3) {
+            html_tablerow = html_tablerow.replace("<COMMAND>", "Mod Key Press");
+          } else if (commandid == 4) {
+            html_tablerow = html_tablerow.replace("<COMMAND>", "Mod Key Release");
+          } else {
+            return false;
+          }
+
+          if (commandid == 3 || commandid == 4) {
+            html_tablerow = html_tablerow.replace("<VALUE>",`
+              <select class="form-control p-0 my-3 mx-2 d-inline-block selectList" style="max-width: 95%; width: 95%;">
+                <option>128 - LEFT CTRL</option>
+                <option>129 - LEFT SHIFT</option>
+                <option>130 - LEFT ALT</option>
+                <option>131 - LEFT GUI</option>
+                <option>132 - RIGHT CTRL</option>
+                <option>133 - RIGHT SHIFT</option>
+                <option>134 - RIGHT ALT</option>
+                <option>135 - RIGHT GUI</option>
+                <option>176 - RETURN</option>
+                <option>177 - ESC</option>
+                <option>178 - BACKSPACE</option>
+                <option>179 - TAB</option>
+                <option>215 - RIGHT ARROW</option>
+                <option>216 - LEFT ARROW</option>
+                <option>217 - DOWN ARROW</option>
+                <option>218 - UP ARROW</option>
+                <option>209 - INSERT</option>
+                <option>212 - DELETE</option>
+                <option>211 - PAGE UP</option>
+                <option>214 - PAGE DOWN</option>
+                <option>210 - HOME</option>
+                <option>213 - END</option>
+                <option>193 - CAPS LOCK</option>
+                <option>194 - F1</option>
+                <option>195 - F2</option>
+                <option>196 - F3</option>
+                <option>197 - F4</option>
+                <option>198 - F5</option>
+                <option>199 - F6</option>
+                <option>200 - F7</option>
+                <option>201 - F8</option>
+                <option>202 - F9</option>
+                <option>203 - F10</option>
+                <option>204 - F11</option>
+                <option>205 - F12</option>
+              </select>`
+            );
+          }
+
+          html_tablerow = html_tablerow.replace("<CMNDID>", commandid);
+          $("#programList").append(html_tablerow);
+
+          return true;
         }
       </script>
 
