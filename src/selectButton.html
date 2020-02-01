@@ -44,39 +44,55 @@
                 </th>
               </tr>
             </table>
-            <button onclick="location.href='programButton.html'" class="w-100 rounded-0 mt-auto btn btn-success">Bearbeiten</button>
+            <div class="spinner-border text-info mx-auto" role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+            <button onclick="location.href='programButton.html'" class="disabled w-100 rounded-0 mt-auto btn btn-success">Bearbeiten</button>
           </div>
         </div>
 
         <div id="buttonSelectList" class="sticky-top col-6 col-md-4 order-2 pl-0 pr-1 pr-sm-3 btn-group-vertical align-self-start">
           <div class="btn-group mb-1">
-            <button id="button0" onclick="loadButton(0)" class="btn btn-dark mr-1">Taster 1</button>
-            <button id="button1" onclick="loadButton(1)" class="btn btn-dark     ">Taster 2</button>
+            <button id="button0" onclick="loadButton(0)" class="disabled btn btn-dark mr-1">Taster 1</button>
+            <button id="button1" onclick="loadButton(1)" class="disabled btn btn-dark     ">Taster 2</button>
           </div>
           <div class="btn-group mb-1">
-            <button id="button2" onclick="loadButton(2)" class="btn btn-dark mr-1">Taster 3</button>
-            <button id="button3" onclick="loadButton(3)" class="btn btn-dark     ">Taster 4</button>
+            <button id="button2" onclick="loadButton(2)" class="disabled btn btn-dark mr-1">Taster 3</button>
+            <button id="button3" onclick="loadButton(3)" class="disabled btn btn-dark     ">Taster 4</button>
           </div>
           <div class="btn-group">
-            <button id="button4" onclick="loadButton(4)" class="btn btn-dark mr-1">Taster 5</button>
-            <button id="button5" onclick="loadButton(5)" class="btn btn-dark     ">Taster 6</button>
+            <button id="button4" onclick="loadButton(4)" class="disabled btn btn-dark mr-1">Taster 5</button>
+            <button id="button5" onclick="loadButton(5)" class="disabled btn btn-dark     ">Taster 6</button>
           </div>
         </div>
       </div>
 
       <script>
-        buttonID = -1;
+        var timeoutHandle;
 
-        function loadButton(btnID){
-          var button = $("#button"+buttonID);
-          if (button.hasClass("disabled")) {
-            // Prevent double clicks
-            return;
+        function sendMessageGetButtons(){
+          buttonCommands = {};
+          selectedMode = "getButtons";
+          window.Bridge.sendMessage("GETBUTTONS");
+
+          setTimeout(function () {
+            // Remove class from every button
+            $(".btn").each(function() {
+              $(this).removeClass("disabled");
+            });
+            $(".spinner-border").fadeOut("slow");
+          }, 3000);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+          if (!window.Bridge.isPortOpen()) {
+            serialOpenPort();
           }
 
-          buttonID = btnID;
-          $("#programList .cmndTr").remove();
+          timeoutHandle = window.setTimeout(sendMessageGetButtons, 1500);
+        });
 
+        function serialOpenPort() {
           if (!window.Bridge.isPortOpen()) {
             var devicePath = localStorage.getItem('devicePath');
             if (devicePath == undefined || devicePath == null) {
@@ -90,37 +106,63 @@
 
             window.Bridge.onOpen = function() {
               console.log("Verbindung zu Gerät '" + devicePath + "' geöffnet!");
-              window.Bridge.sendMessage("GETBUTTONS");
+
+              // Get every command and it's details:
+              // Format: CMND_FULLSTR; CMND_IDSTR; CMND_SHORTSTR; CMND_ID
+              selectedMode = "getCmnds";
+              window.Bridge.sendMessage("GETCMNDS");
             };
 
-            window.Bridge.onDataReceive = function(msg){
-              console.log("<tastatur>: " + msg);
-
-              msg = msg.split(";", 3);
-              buttonid = msg[0];
-              cmnd_str = msg[1];
-              value = msg[2];
-              console.log(buttonID + "=" + buttonid + " " + cmnd_str + " " + value);
-
-              if (buttonid == buttonID) {
-                console.log("Befehl erkannt. '" + cmnd_str + "': '" + value + "'");
-
-                var html_tablerow = `
-                    <tr command="`+cmnd_str+`" style="width: 75%; border-top: 1px solid gray;" class='cmndTr p-0 pl-2 pr-2 pt-2 m-0'>
-                      <td id="commandlabel" class='m-0 p-1' style="border-right: 1px solid black;">
-                        `+cmnd_str+`
-                      </td>
-                      <td id="value" class="p-1">
-                        ` + value +`
-                      </td>
-                    </tr>`;
-                $("#programList").append(html_tablerow);
-              }
-            }
+            window.Bridge.onDataReceive = onDataReceive;
 
             window.Bridge.openSerialConnection();
+          }
+        }
+
+        function listAddCommandsCache() {
+          $("#programList .cmndTr").remove();
+
+          buttonCommands[selectedButtonID].forEach(function(cmnd) {
+            var html_tablerow = `
+                <tr command="`+cmnd['cmnd_str']+`" style="width: 75%; border-top: 1px solid gray;" class='cmndTr p-0 pl-2 pr-2 pt-2 m-0'>
+                  <td id="commandlabel" class='m-0 p-1' style="border-right: 1px solid black;">
+                    `+commands[cmnd['cmnd_str']]["full"]+`
+                  </td>
+                  <td id="value" class="p-1">
+                    ` + cmnd['value'] +`
+                  </td>
+                </tr>`;
+            $("#programList").append(html_tablerow);
+          });
+        }
+
+        selectedButtonID = -1;
+        selectedMode = "none";
+        // A dict which stores all commands and it's details
+        var commands = {};
+        // A dict which learns the commands of pressed buttons
+        var buttonCommands = {};
+
+        function loadButton(btnID) {
+          selectedButtonID = btnID;
+          var button = $("#button"+selectedButtonID);
+          if (button.hasClass("disabled")) {
+            // Prevent double clicks
+            return;
+          }
+
+          $("#programList .cmndTr").remove();
+
+          if (!window.Bridge.isPortOpen()) {
+            serialOpenPort();
           } else {
-            window.Bridge.sendMessage("GETBUTTONS");
+            if (buttonCommands[selectedButtonID] != null && buttonCommands[selectedButtonID] != undefined) {
+              console.log("Zeige zwischengespeicherte Befehle, um EEPROM zu schonen.");
+              console.log(buttonCommands);
+              listAddCommandsCache();
+            } else {
+              alert("Taster wurde noch nicht programmiert oder es ist ein Fehler aufgetreten!");
+            }
           }
 
           // Remove class from every other button
@@ -130,6 +172,56 @@
 
           button.addClass("disabled");
           window.scrollTo({ left: 0, top: document.body.scrollHeight, behavior: "smooth" });
+        }
+
+        function onDataReceive(msg) {
+          if (buttonCommands == null || buttonCommands == undefined) {
+            window.clearTimeout(timeoutHandle);
+            timeoutHandle = window.setTimeout(sendMessageGetButtons, 1500);
+          }
+
+          console.log("%cRECV: " + msg, "color: blue;");
+
+          if (msg[0] == "#") {
+            // It's a comment...
+            return;
+          }
+
+          if (selectedMode === "getCmnds") {
+            parseCommands(msg);
+          } else if (selectedMode === "getButtons") {
+            parseButtons(msg);
+          }
+        }
+
+        function parseCommands(msg) {
+          // Format: CMND_FULLSTR; CMND_IDSTR; CMND_SHORTSTR; CMND_ID
+          msg = msg.split(";", 4);
+          cmnd_fullstr = msg[0];
+          cmnd_idstr = msg[1];
+          cmnd_shortstr = msg[2];
+          cmnd_ascii = msg[3];
+
+          console.log("%cBefehl erlernt. " + cmnd_fullstr + ": " + cmnd_idstr + " " + cmnd_shortstr + " " + cmnd_ascii, "color: green;");
+          commands[cmnd_idstr] = {"full": cmnd_fullstr, "short": cmnd_shortstr, "ascii": cmnd_ascii};
+        }
+
+        function parseButtons(msg) {
+          // Format: BUTTONID; CMND_IDSTR; VALUE
+          msg = msg.split(";", 3);
+          buttonid = msg[0];
+          cmnd_str = msg[1];
+          value = msg[2];
+
+          console.log("%cBefehl erkannt. '" + commands[cmnd_str]["full"] + "': '" + value + "'", "color: green;");
+
+          if (buttonCommands[buttonid] == null || buttonCommands[buttonid] == undefined) {
+            buttonCommands[buttonid] = [{'cmnd_str': cmnd_str, 'value': value}];
+          } else {
+            buttonCommands[buttonid].push({'cmnd_str': cmnd_str, 'value': value});
+          }
+
+          console.warn(buttonCommands);
         }
 
         function addCommand(commandid) {

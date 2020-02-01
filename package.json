@@ -1,19 +1,12 @@
 {
-  "name": "electron-quick-start",
+  "name": "Makrotastatur",
   "version": "1.0.0",
-  "description": "A minimal Electron application",
+  "description": "Programmiere deine Makrotastatur mit diesem Programm.",
   "main": "main.js",
   "scripts": {
-    "start": "electron . --inspect"
+    "start": "electron ."
   },
-  "repository": "https://github.com/electron/electron-quick-start",
-  "keywords": [
-    "Electron",
-    "quick",
-    "start",
-    "tutorial",
-    "demo"
-  ],
+  "repository": "https://github.com/D0n1elT/MakrotastaturGUI",
   "author": "GitHub",
   "license": "CC0-1.0",
   "devDependencies": {
