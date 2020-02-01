@@ -1,24 +1,65 @@
 {
   "name": "Makrotastatur",
-  "version": "1.0.0",
+  "productName": "Makrotastatur",
+  "version": "1.1.01",
   "description": "Programmiere deine Makrotastatur mit diesem Programm.",
-  "main": "main.js",
+  "main": "src/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "echo \"No linting configured\""
   },
   "repository": "https://github.com/D0n1elT/MakrotastaturGUI",
-  "author": "GitHub",
-  "license": "CC0-1.0",
-  "devDependencies": {
-    "electron": "^7.1.9",
-    "electron-rebuild": "^1.9.0"
+  "keywords": [],
+  "author": {
+    "name": "Daniel D0n1elT Teichmann",
+    "email": "daniel@teichm-sh.de"
+  },
+  "license": "MIT",
+  "config": {
+    "forge": {
+      "packagerConfig": {},
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "Makrotastatur"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "darwin"
+          ]
+        },
+        {
+          "name": "@electron-forge/maker-deb",
+          "config": {}
+        },
+        {
+          "name": "@electron-forge/maker-rpm",
+          "config": {}
+        }
+      ]
+    }
   },
   "dependencies": {
+    "electron-squirrel-startup": "^1.0.0",
     "bootstrap": "^4.4.1",
     "jquery": "^3.4.1",
     "mdbootstrap": "^4.12.0",
     "popper.js": "^1.16.1",
     "serialport": "^8.0.6",
     "sortablejs": "^1.10.2"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^6.0.0-beta.47",
+    "@electron-forge/maker-deb": "^6.0.0-beta.47",
+    "@electron-forge/maker-rpm": "^6.0.0-beta.47",
+    "@electron-forge/maker-squirrel": "^6.0.0-beta.47",
+    "@electron-forge/maker-zip": "^6.0.0-beta.47",
+    "electron": "7.1.11"
   }
 }
