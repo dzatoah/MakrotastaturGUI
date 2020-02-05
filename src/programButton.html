@@ -17,16 +17,16 @@
   <body>
     <main class="main pt-2 px-1 m-0 mb-2 p-md-3 m-md-3">
       <button class="float-left btn-arrow-left mx-3 btn btn-dark" onclick="history.back()">Zurück</button>
-      <h3 class="text-right">Makrotastatur - Taster bearbeiten</h3>
+      <h3 id="titleText" class="text-right">Makrotastatur - Taster bearbeiten</h3>
       <hr></hr>
 
       <form id="programForm" action="#">
         <table id="programList" class='w-100 text-center'>
           <tr>
-            <th style="border-bottom: 1px solid black; border-right: 1px solid black; width: 20%">
+            <th style="border-bottom: 1px solid gray; border-right: 1px solid gray; width: 20%">
               Befehl
             </th>
-            <th style="border-bottom: 1px solid black;">
+            <th style="border-bottom: 1px solid gray;">
               Wert
             </th>
           </tr>
@@ -42,7 +42,60 @@
       </form>
 
       <script>
+        function loadDarkMode() {
+          // Get HTML head element
+          var head = document.getElementsByTagName('HEAD')[0];
+
+          // Create new link Element
+          var link = document.createElement('link');
+
+          // set the attributes for link element
+          link.rel = 'stylesheet';
+          link.type = 'text/css';
+          link.href = '../node_modules/bootswatch/dist/darkly/bootstrap.min.css';
+          // Append link element to HTML head 
+          head.appendChild(link);
+
+          $(".btn-arrow-left ").removeClass("btn-arrow-left  mx-3");
+          $(".btn-arrow-right").removeClass("btn-arrow-right mx-3");
+
+          localStorage.setItem("dark_mode_active", true);
+        }
+
+        function displayAlertMessage(title, message, color = "", openTime = "slow", closeTime = "fast") {
+          var alertHTML = `
+          <div id="bsAlert" class="alert `+color+` alert-dismissible" role="alert">
+            <strong class="display-4">`+title+`</strong>
+            <hr></hr>
+            <p class="p-0 m-0" id="errorMessage">
+              `+message+`
+            </p>
+            <button type="button" class="close" onclick="$('#bsAlert').slideUp('`+closeTime+`');" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>`;
+
+          // Remove old instances.
+          $("#bsAlert").remove();
+
+          $("main").prepend(alertHTML);
+          // Hide it immediately
+          $("#bsAlert").hide();
+
+          // Move to right location...
+          $("#bsAlert").insertAfter($('#titleText + hr'));
+
+          // Display...
+          $("#bsAlert").slideDown(openTime);
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
+          // IF DARK MODE ADD BOOTSWATCH CSS FILES
+          console.error(localStorage.getItem("dark_mode_active") + " " + window.Bridge.checkDarkMode());
+          if (window.Bridge.checkDarkMode() == true || localStorage.getItem("dark_mode_active") == "true") {
+            loadDarkMode();
+          }
+
           $('#programForm').submit(function( event ) {
             submitForm(event, this);
           });
@@ -58,9 +111,9 @@
         });
 
         function addCommand(commandid) {
-          html_tablerow = `
+          var html_tablerow = `
               <tr commandid="<CMNDID>" style="width: 75%; border-top: 1px solid gray;" class='p-0 pl-2 pr-2 pt-2 m-0'>
-                <td id="commandlabel" class='m-0 p-0' style="border-right: 1px solid black;">
+                <td id="commandlabel" class='m-0 p-0' style="border-right: 1px solid gray;">
                   <img src="imgs/movable.png" alt="::" style="max-width: 20px; filter: opacity(50%);" class="m-0 p-0 d-inline-block float-left"></img> <COMMAND>
                 </td>
                 <td id="value">

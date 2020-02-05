@@ -1,6 +1,9 @@
 // All of the Node.js APIs are available in the preload process.
 // It has the same sandbox as a Chrome extension.
 
+// In renderer process (web page).
+const { ipcRenderer } = require('electron')
+
 const SerialPort = require('serialport');
 const parsers = SerialPort.parsers
 
@@ -27,8 +30,17 @@ window.addEventListener('DOMContentLoaded', () => {
     isPortOpen: isOpen,
     onOpen: onOpen,
     onError: onError,
+    checkDarkMode: checkDarkMode
   };
 })
+
+var isDarkMode = false;
+// Send request...
+isDarkMode = ipcRenderer.sendSync('isDarkMode', "gimme");
+
+function checkDarkMode() {
+  return isDarkMode;
+}
 
 function isOpen() {
   return (port != null && port.isOpen);

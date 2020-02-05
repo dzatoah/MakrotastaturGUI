@@ -17,11 +17,11 @@
   <body>
     <main class="main pt-2 px-1 m-0 mb-2 p-md-3 m-md-3">
       <button class="float-left btn-arrow-left mx-3 btn btn-dark" onclick="history.back()">Zurück</button>
-      <h3 class="text-right">Makrotastatur - Taster auswählen</h3>
+      <h3 id="titleText" class="text-right">Makrotastatur - Taster auswählen</h3>
       <hr></hr>
 
       <div class="container-fluid h-100 m-0 p-0 row">
-        <div class="order-1 col-12 col-md-4 col-lg-3 mb-2 mb-md-0 pr-0 pr-md-3 pl-0" style="">
+        <div class="order-1 col-12 col-md-4 col-lg-3 mb-2 mb-md-0 pr-0 pr-md-3 pl-0">
           <div class="w-100 p-3" style="border: 1px solid gray;">
             <h5>Technische Informationen</h5>
             <hr class="p-0 mt-0"></hr>
@@ -36,10 +36,10 @@
           <div class="w-100 h-100 row m-0">
             <table id="programList" class='w-100 text-center'>
               <tr>
-                <th class="p-1" style="border-bottom: 1px solid black; border-right: 1px solid black; width: 20%">
+                <th class="p-1" style="border-bottom: 1px solid gray; border-right: 1px solid gray; width: 20%">
                   Befehl
                 </th>
-                <th class="p-1" style="border-bottom: 1px solid black;">
+                <th class="p-1" style="border-bottom: 1px solid gray;">
                   Wert
                 </th>
               </tr>
@@ -73,6 +73,7 @@
         function sendMessageGetButtons(){
           buttonCommands = {};
           selectedMode = "getButtons";
+          console.log("%cSEND: 'GETBUTTONS'", "color: orange;");
           window.Bridge.sendMessage("GETBUTTONS");
 
           setTimeout(function () {
@@ -84,7 +85,60 @@
           }, 3000);
         }
 
+        function loadDarkMode() {
+          // Get HTML head element
+          var head = document.getElementsByTagName('HEAD')[0];
+
+          // Create new link Element
+          var link = document.createElement('link');
+
+          // set the attributes for link element
+          link.rel = 'stylesheet';
+          link.type = 'text/css';
+          link.href = '../node_modules/bootswatch/dist/darkly/bootstrap.min.css';
+          // Append link element to HTML head 
+          head.appendChild(link);
+
+          $(".btn-arrow-left ").removeClass("btn-arrow-left  mx-3");
+          $(".btn-arrow-right").removeClass("btn-arrow-right mx-3");
+
+          localStorage.setItem("dark_mode_active", true);
+        }
+
+        function displayAlertMessage(title, message, color = "", openTime = "slow", closeTime = "fast") {
+          var alertHTML = `
+          <div id="bsAlert" class="alert `+color+` alert-dismissible" role="alert">
+            <strong class="display-4">`+title+`</strong>
+            <hr></hr>
+            <p class="p-0 m-0" id="errorMessage">
+              `+message+`
+            </p>
+            <button type="button" class="close" onclick="$('#bsAlert').slideUp('`+closeTime+`');" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>`;
+
+          // Remove old instances.
+          $("#bsAlert").remove();
+
+          $("main").prepend(alertHTML);
+          // Hide it immediately
+          $("#bsAlert").hide();
+
+          // Move to right location...
+          $("#bsAlert").insertAfter($('#titleText + hr'));
+
+          // Display...
+          $("#bsAlert").slideDown(openTime);
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
+          // IF DARK MODE ADD BOOTSWATCH CSS FILES
+          console.error(localStorage.getItem("dark_mode_active") + " " + window.Bridge.checkDarkMode());
+          if (window.Bridge.checkDarkMode() == true || localStorage.getItem("dark_mode_active") == "true") {
+            loadDarkMode();
+          }
+
           if (!window.Bridge.isPortOpen()) {
             serialOpenPort();
           }
@@ -110,6 +164,7 @@
               // Get every command and it's details:
               // Format: CMND_FULLSTR; CMND_IDSTR; CMND_SHORTSTR; CMND_ID
               selectedMode = "getCmnds";
+              console.log("%cSEND: 'GETCMNDS'", "color: orange;");
               window.Bridge.sendMessage("GETCMNDS");
             };
 
@@ -125,7 +180,7 @@
           buttonCommands[selectedButtonID].forEach(function(cmnd) {
             var html_tablerow = `
                 <tr command="`+cmnd['cmnd_str']+`" style="width: 75%; border-top: 1px solid gray;" class='cmndTr p-0 pl-2 pr-2 pt-2 m-0'>
-                  <td id="commandlabel" class='m-0 p-1' style="border-right: 1px solid black;">
+                  <td id="commandlabel" class='m-0 p-1' style="border-right: 1px solid gray;">
                     `+commands[cmnd['cmnd_str']]["full"]+`
                   </td>
                   <td id="value" class="p-1">
@@ -136,8 +191,8 @@
           });
         }
 
-        selectedButtonID = -1;
-        selectedMode = "none";
+        var selectedButtonID = -1;
+        var selectedMode = "none";
         // A dict which stores all commands and it's details
         var commands = {};
         // A dict which learns the commands of pressed buttons
@@ -197,10 +252,10 @@
         function parseCommands(msg) {
           // Format: CMND_FULLSTR; CMND_IDSTR; CMND_SHORTSTR; CMND_ID
           msg = msg.split(";", 4);
-          cmnd_fullstr = msg[0];
-          cmnd_idstr = msg[1];
-          cmnd_shortstr = msg[2];
-          cmnd_ascii = msg[3];
+          var cmnd_fullstr = msg[0];
+          var cmnd_idstr = msg[1];
+          var cmnd_shortstr = msg[2];
+          var cmnd_ascii = msg[3];
 
           console.log("%cBefehl erlernt. " + cmnd_fullstr + ": " + cmnd_idstr + " " + cmnd_shortstr + " " + cmnd_ascii, "color: green;");
           commands[cmnd_idstr] = {"full": cmnd_fullstr, "short": cmnd_shortstr, "ascii": cmnd_ascii};
@@ -209,9 +264,9 @@
         function parseButtons(msg) {
           // Format: BUTTONID; CMND_IDSTR; VALUE
           msg = msg.split(";", 3);
-          buttonid = msg[0];
-          cmnd_str = msg[1];
-          value = msg[2];
+          var buttonid = msg[0];
+          var cmnd_str = msg[1];
+          var value = msg[2];
 
           console.log("%cBefehl erkannt. '" + commands[cmnd_str]["full"] + "': '" + value + "'", "color: green;");
 
@@ -225,9 +280,9 @@
         }
 
         function addCommand(commandid) {
-          html_tablerow = `
+          var html_tablerow = `
               <tr commandid="<CMNDID>" style="width: 75%; border-top: 1px solid gray;" class='p-0 pl-2 pr-2 pt-2 m-0'>
-                <td id="commandlabel" class='m-0 p-0' style="border-right: 1px solid black;">
+                <td id="commandlabel" class='m-0 p-0' style="border-right: 1px solid gray;">
                   <img src="imgs/movable.png" alt="::" style="max-width: 20px; filter: opacity(50%);" class="m-0 p-0 d-inline-block float-left"></img> <COMMAND>
                 </td>
                 <td id="value">
@@ -312,6 +367,6 @@
     </main>
 
     <!-- You can also require other files to run in this process -->
-    <script src="../renderer.js"></script>
+    <script src="renderer.js"></script>
   </body>
 </html>

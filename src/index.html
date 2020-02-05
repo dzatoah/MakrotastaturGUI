@@ -84,7 +84,7 @@
         }
 
         function displayAlertMessage(title, message, color = "", openTime = "slow", closeTime = "fast") {
-          alertHTML = `
+          var alertHTML = `
           <div id="bsAlert" class="alert `+color+` alert-dismissible" role="alert">
             <strong class="display-4">`+title+`</strong>
             <hr></hr>
@@ -110,7 +110,40 @@
           $("#bsAlert").slideDown(openTime);
         }
 
+        function loadDarkMode() {
+          // Get HTML head element
+          var head = document.getElementsByTagName('HEAD')[0];
+
+          // Create new link Element
+          var link = document.createElement('link');
+
+          // set the attributes for link element
+          link.rel = 'stylesheet';
+          link.type = 'text/css';
+          link.href = '../node_modules/bootswatch/dist/darkly/bootstrap.min.css';
+          // Append link element to HTML head 
+          head.appendChild(link);
+
+          $(".btn-arrow-left ").removeClass("btn-arrow-left  mx-3");
+          $(".btn-arrow-right").removeClass("btn-arrow-right mx-3");
+
+          localStorage.setItem("dark_mode_active", true);
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
+          // IF DARK MODE ADD BOOTSWATCH CSS FILES
+          console.error(localStorage.getItem("dark_mode_active") + " " + window.Bridge.checkDarkMode());
+          if (window.Bridge.checkDarkMode() == true || localStorage.getItem("dark_mode_active") == "true") {
+            loadDarkMode();
+          } else {
+            console.warn("Sicher, dass du lightmode verwenden willst?");
+            displayAlertMessage("Darkmode?",
+              `Du möchtest doch sicher den darkmode benutzen oder?
+              <div class='align-text-top' style="min-height: 3rem;">
+                <button class='btn float-right btn-primary' onclick="$('#bsAlert').slideUp('fast'); loadDarkMode();">Darkmode laden</button>
+              </div>`, "alert-info");
+          }
+
           window.Bridge.onError = function(message, error) {
             displayAlertMessage("Oh nein!", message+"<br>"+error, "alert-danger");
           };
