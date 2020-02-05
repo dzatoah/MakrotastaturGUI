@@ -8,8 +8,7 @@
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "publish": "electron-forge publish",
-    "lint": "echo \"No linting configured\""
+    "publish": "electron-forge publish"
   },
   "repository": "https://github.com/D0n1elT/MakrotastaturGUI",
   "keywords": [],
@@ -20,34 +19,42 @@
   "license": "MIT",
   "config": {
     "forge": {
-      "packagerConfig": {},
-      "makers": [
-        {
-          "name": "@electron-forge/maker-squirrel",
-          "config": {
-            "name": "Makrotastatur"
-          }
-        },
-        {
-          "name": "@electron-forge/maker-zip",
-          "platforms": [
-            "darwin"
-          ]
-        },
-        {
-          "name": "@electron-forge/maker-deb",
-          "config": {}
-        },
-        {
-          "name": "@electron-forge/maker-rpm",
-          "config": {}
-        }
-      ]
+      "make_targets": {
+        "win32": [
+          "squirrel",
+          "zip"
+        ],
+        "darwin": [
+          "zip"
+        ],
+        "linux": [
+          "deb",
+          "rpm"
+        ]
+      },
+      "electronPackagerConfig": {
+        "packageManager": "npm"
+      },
+      "electronWinstallerConfig": {
+        "name": "Makrotastatur"
+      },
+      "electronInstallerDebian": {},
+      "electronInstallerRedhat": {},
+      "github_repository": {
+        "owner": "D0n1elT",
+        "name": "Daniel Teichmann"
+      },
+      "windowsStoreConfig": {
+        "packageName": "",
+        "name": "Makrotastatur"
+      }
     }
   },
   "dependencies": {
-    "electron-squirrel-startup": "latest",
     "bootstrap": "latest",
+    "bootswatch": "^4.4.1",
+    "electron-compile": "latest",
+    "electron-squirrel-startup": "^1.0.0",
     "jquery": "latest",
     "mdbootstrap": "latest",
     "popper.js": "latest",
@@ -55,11 +62,10 @@
     "sortablejs": "latest"
   },
   "devDependencies": {
-    "@electron-forge/cli": "latest",
-    "@electron-forge/maker-deb": "latest",
-    "@electron-forge/maker-rpm": "latest",
-    "@electron-forge/maker-squirrel": "latest",
-    "@electron-forge/maker-zip": "latest",
+    "babel-plugin-transform-async-to-generator": "^6.24.1",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-react": "^6.24.1",
+    "electron-forge": "latest",
     "electron-prebuilt-compile": "latest"
   }
 }
