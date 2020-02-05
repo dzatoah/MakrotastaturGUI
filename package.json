@@ -1,7 +1,7 @@
 {
-  "name": "Makrotastatur",
-  "productName": "Makrotastatur",
-  "version": "1.1.21",
+  "name": "makrotastatur",
+  "productName": "Makrotastatur GUI",
+  "version": "v1.1.22-alpha",
   "description": "Programmiere deine Makrotastatur mit diesem Programm.",
   "main": "src/main.js",
   "scripts": {
@@ -29,24 +29,16 @@
         ],
         "linux": [
           "deb",
-          "rpm"
+          "rpm",
+          "zip"
         ]
       },
       "electronPackagerConfig": {
         "packageManager": "npm"
       },
-      "electronWinstallerConfig": {
-        "name": "Makrotastatur"
-      },
-      "electronInstallerDebian": {},
-      "electronInstallerRedhat": {},
       "github_repository": {
         "owner": "D0n1elT",
         "name": "Daniel Teichmann"
-      },
-      "windowsStoreConfig": {
-        "packageName": "",
-        "name": "Makrotastatur"
       }
     }
   },
