@@ -1,7 +1,7 @@
 {
   "name": "Makrotastatur",
   "productName": "Makrotastatur",
-  "version": "1.1.01",
+  "version": "1.1.21",
   "description": "Programmiere deine Makrotastatur mit diesem Programm.",
   "main": "src/main.js",
   "scripts": {
@@ -13,7 +13,7 @@
   "repository": "https://github.com/D0n1elT/MakrotastaturGUI",
   "keywords": [],
   "author": {
-    "name": "Daniel D0n1elT Teichmann",
+    "name": "Daniel Teichmann",
     "email": "daniel@teichm-sh.de"
   },
   "license": "MIT",
