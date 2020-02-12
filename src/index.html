@@ -47,7 +47,8 @@
 
           window.Bridge.getSerialCOMsList().then(function(data){
             data.forEach(function(device){
-              if (device.manufacturer == "SparkFun" && device.serialNumber == "HIDPC" || widerSearch) {
+              console.log(device);
+              if (device.productId == "9206" && device.serialNumber == "HIDPC" || widerSearch) {
                 if (!foundDevice) $("#deviceList").empty();
                 foundDevice = true;
 
@@ -77,7 +78,7 @@
               console.log("Kein passendes serielles Gerät gefunden!");
               $("#deviceList").append(`<li class="list-group-item-danger list-group-item" id="option_nodevice">
                 <span class="align-text-top">Kein passendes serielles Gerät gefunden!</span>
-                <button onclick="reloadDeviceList(true);" class="float-right btn btn-sm btn-secondary">Suchparameter ausweiten</button>
+                <button onclick="reloadDeviceList(true);" class="float-right btn btn-sm btn-secondary mt-3 m-sm-0">Suchparameter ausweiten</button>
               </li>`);
             }
           }, 1000);
@@ -132,15 +133,14 @@
 
         window.addEventListener('DOMContentLoaded', () => {
           // IF DARK MODE ADD BOOTSWATCH CSS FILES
-          console.error(localStorage.getItem("dark_mode_active") + " " + window.Bridge.checkDarkMode());
-          if (window.Bridge.checkDarkMode() == true || localStorage.getItem("dark_mode_active") == "true") {
+          if (window.Bridge.isDarkMode == true || localStorage.getItem("dark_mode_active") == "true") {
             loadDarkMode();
           } else {
             console.warn("Sicher, dass du lightmode verwenden willst?");
             displayAlertMessage("Darkmode?",
               `Du möchtest doch sicher den darkmode benutzen oder?
               <div class='align-text-top' style="min-height: 3rem;">
-                <button class='btn float-right btn-primary' onclick="$('#bsAlert').slideUp('fast'); loadDarkMode();">Darkmode laden</button>
+                <button class='btn float-right btn-primary mt-2 m-md-0' onclick="$('#bsAlert').slideUp('fast'); loadDarkMode();">Darkmode laden</button>
               </div>`, "alert-info");
           }
 
@@ -158,10 +158,19 @@
             window.Bridge.setCOMPath(devicePath);
 
             window.Bridge.onDataReceive = function(msg){console.log("lol: " + msg);}
+            window.Bridge.onDisconnect = () => {
+              console.error("%cPORT DISCONNECTED", "color: red;");
+              location.href="index.html";
+            }
+            window.Bridge.onClose = () => {
+              console.error("%cPORT CLOSED", "color: red;");
+              location.href="index.html";
+            }
+            
             window.Bridge.onOpen = function() {
               console.log("Verbindung zu Gerät '" + devicePath + "' geöffnet!");
 
-              displayAlertMessage("Erfolgreich verbunden!", "Sie werden <strong>weitergeleitet.</strong>", "alert-success", openTime="fast");
+              displayAlertMessage("Verbunden!", "Sie werden <strong>weitergeleitet.</strong>", "alert-success", openTime="fast");
               // Redirect user to the next site.
               setTimeout(function(){location.href='selectButton.html';}, 1000);
 
@@ -173,8 +182,18 @@
         }
       </script>
     </main>
-
-    <!-- You can also require other files to run in this process -->
-    <script src="./renderer.js"></script>
+    <footer class="fixed-bottom px-2 text-muted">
+      <div class="row">
+        <div class="col float-right text-left   pr-1" id="footer_appVersion"></div>
+        <div class="col             text-center p-0 ">teichm-sh.de/makro</div>
+        <div class="col float-left  text-right  pl-1">© Daniel Teichmann</div>
+      </div>
+      <script>
+        window.addEventListener("DOMContentLoaded", () => {
+          var version = window.Bridge.appVersion;
+          $("#footer_appVersion").append(version);
+        });
+      </script>
+    </footer>
   </body>
 </html>

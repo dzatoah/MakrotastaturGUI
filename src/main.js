@@ -11,8 +11,28 @@ const { ipcMain } = require('electron')
 const { systemPreferences } = require('electron')
 
 ipcMain.on('isDarkMode', (event, arg) => {
-  console.log("IsDarkMode?: " + false);
-  event.returnValue = false;
+  var isDarkMode = systemPreferences.isDarkMode();
+  console.log("Got event: 'IsDarkMode'\tReturning: '" + isDarkMode + "'");
+  event.returnValue = isDarkMode;
+});
+
+ipcMain.on('getVersion', (event, arg) => {
+  var version = app.getVersion();
+  console.log("Got event: 'getVersion'\tReturning: '" + version + "'");
+  event.returnValue = version;
+});
+
+global.commands;
+global.buttonCommands;
+global.selectedButtonID;
+ipcMain.on("setCommandsObj", (event, argObj) => {
+  global.commands = argObj;
+});
+ipcMain.on("setButtonCommandsObj", (event, argObj) => {
+  global.buttonCommands = argObj;
+});
+ipcMain.on("setSelectedButtonIDObj", (event, argObj) => {
+  global.selectedButtonID = argObj;
 });
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -25,15 +45,22 @@ const createWindow = () => {
     width: 1000,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: false,
+      contextIsolation: false
     }
   })
 
   // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools()
+  const isDev = require('electron-is-dev');
+  if (isDev) {
+    console.log('App is running in development mode...');
+
+    // Open the DevTools.
+    mainWindow.webContents.openDevTools();
+  }
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {

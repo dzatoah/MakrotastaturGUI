@@ -2,7 +2,7 @@
 // It has the same sandbox as a Chrome extension.
 
 // In renderer process (web page).
-const { ipcRenderer } = require('electron')
+const { ipcRenderer, remote } = require("electron");
 
 const SerialPort = require('serialport');
 const parsers = SerialPort.parsers
@@ -17,6 +17,7 @@ comPath = null;
 
 window.addEventListener('DOMContentLoaded', () => {
   window.$ = window.jQuery = require('jquery');
+  window.jQueryUI = require('jqueryui');
   window.Bootstrap = require('bootstrap');
   window.Sortable = require('sortablejs');
 
@@ -30,16 +31,21 @@ window.addEventListener('DOMContentLoaded', () => {
     isPortOpen: isOpen,
     onOpen: onOpen,
     onError: onError,
-    checkDarkMode: checkDarkMode
+    onClose: onClose,
+    onDisconnect: onDisconnect,
+    isDarkMode: ipcRenderer.sendSync('isDarkMode', "gimme"),
+    appVersion: ipcRenderer.sendSync("getVersion", "please"),
+    getGlobal: getGlobal,
+    sendEvent: sendEvent
   };
 })
 
-var isDarkMode = false;
-// Send request...
-isDarkMode = ipcRenderer.sendSync('isDarkMode', "gimme");
+function sendEvent(topic, value) {
+  ipcRenderer.send(topic, value);
+}
 
-function checkDarkMode() {
-  return isDarkMode;
+function getGlobal(value) {
+  return remote.getGlobal(value);
 }
 
 function isOpen() {
@@ -48,6 +54,14 @@ function isOpen() {
 
 function onOpen() {
   console.log(comPath + " port opened!");
+}
+
+function onDisconnect() {
+  console.log(comPath + " port disconnected!");
+}
+
+function onClose() {
+  console.log(comPath + " port closed!");
 }
 
 function onError(message) {
@@ -73,9 +87,14 @@ function sendMessage(message) {
 
 function updateEvents() {
   parser.removeAllListeners("data");
-    port.removeAllListeners("open");
+  port.removeAllListeners("open");
+  port.removeAllListeners("disconnect");
+  port.removeAllListeners("close");
+
   parser.on('data', window.Bridge.onDataReceive);
-    port.on('open', window.Bridge.onOpen);
+  port.on('open', window.Bridge.onOpen);
+  port.on('disconnect', window.Bridge.onDisconnect);
+  port.on('close', window.Bridge.onClose);
 }
 
 function openSerialConnection() {

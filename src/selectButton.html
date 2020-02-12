@@ -47,7 +47,7 @@
             <div class="spinner-border text-info mx-auto" role="status">
               <span class="sr-only">Loading...</span>
             </div>
-            <button onclick="location.href='programButton.html'" class="disabled w-100 rounded-0 mt-auto btn btn-success">Bearbeiten</button>
+            <button onclick="redirectToProgramButton()" class="disabled w-100 rounded-0 mt-auto btn btn-success">Bearbeiten</button>
           </div>
         </div>
 
@@ -68,6 +68,20 @@
       </div>
 
       <script>
+        function redirectToProgramButton() {
+          // Set objects.
+          window.Bridge.sendEvent("setCommandsObj", commands);
+          window.Bridge.sendEvent("setButtonCommandsObj", buttonCommands);
+          window.Bridge.sendEvent("setSelectedButtonIDObj", selectedButtonID);
+
+          /*// Read objects.
+          console.log("commands: " + window.Bridge.getGlobal("commands")); // => commands obj!
+          console.log("buttonCommands: " + window.Bridge.getGlobal("buttonCommands")); // => buttonCommands obj!
+          console.log("selectedButtonID: " + window.Bridge.getGlobal("selectedButtonID")); // => selectedButtonID!*/
+          
+          location.href='programButton.html'
+        }
+
         var timeoutHandle;
 
         function sendMessageGetButtons(){
@@ -134,23 +148,20 @@
 
         window.addEventListener('DOMContentLoaded', () => {
           // IF DARK MODE ADD BOOTSWATCH CSS FILES
-          console.error(localStorage.getItem("dark_mode_active") + " " + window.Bridge.checkDarkMode());
-          if (window.Bridge.checkDarkMode() == true || localStorage.getItem("dark_mode_active") == "true") {
+          if (window.Bridge.isDarkMode == true || localStorage.getItem("dark_mode_active") == "true") {
             loadDarkMode();
           }
 
           if (!window.Bridge.isPortOpen()) {
             serialOpenPort();
           }
-
-          timeoutHandle = window.setTimeout(sendMessageGetButtons, 1500);
         });
 
         function serialOpenPort() {
           if (!window.Bridge.isPortOpen()) {
             var devicePath = localStorage.getItem('devicePath');
             if (devicePath == undefined || devicePath == null) {
-              console.error("Oh oh! Sieht so aus als würde devicePath nichts im localStorage gesetzt sein.");
+              console.error("Oh oh! Sieht so aus als würde devicePath nicht im localStorage gesetzt sein.");
               return;
             }
             console.log("Stelle Verbindung mit '"+devicePath+"' her.");
@@ -161,14 +172,32 @@
             window.Bridge.onOpen = function() {
               console.log("Verbindung zu Gerät '" + devicePath + "' geöffnet!");
 
-              // Get every command and it's details:
-              // Format: CMND_FULLSTR; CMND_IDSTR; CMND_SHORTSTR; CMND_ID
-              selectedMode = "getCmnds";
-              console.log("%cSEND: 'GETCMNDS'", "color: orange;");
-              window.Bridge.sendMessage("GETCMNDS");
+              commands = window.Bridge.getGlobal("commands");
+              if (commands != null && commands != undefined && !$.isEmptyObject(commands)) {
+                console.log("EEPROM der Tastatur wurde schon abgefragt und steht uns zur verfügung.");
+              } else {
+                console.log("Frage Tastatur nach verfügbaren Befehlen...");
+
+                // Get every command and it's details:
+                // Format: CMND_FULLSTR; CMND_IDSTR; CMND_SHORTSTR; CMND_ID
+                commands = {};
+                selectedMode = "getCmnds";
+                console.log("%cSEND: 'GETCMNDS'", "color: orange;");
+                window.Bridge.sendMessage("GETCMNDS");
+              }
+
+              timeoutHandle = window.setTimeout(sendMessageGetButtons, 1500);
             };
 
             window.Bridge.onDataReceive = onDataReceive;
+            window.Bridge.onDisconnect = () => {
+              console.error("%cPORT DISCONNECTED", "color: red;");
+              location.href="index.html";
+            }
+            window.Bridge.onClose = () => {
+              console.error("%cPORT CLOSED", "color: red;");
+              location.href="index.html";
+            }
 
             window.Bridge.openSerialConnection();
           }
@@ -258,7 +287,7 @@
           var cmnd_ascii = msg[3];
 
           console.log("%cBefehl erlernt. " + cmnd_fullstr + ": " + cmnd_idstr + " " + cmnd_shortstr + " " + cmnd_ascii, "color: green;");
-          commands[cmnd_idstr] = {"full": cmnd_fullstr, "short": cmnd_shortstr, "ascii": cmnd_ascii};
+          commands[cmnd_idstr] = {"full": cmnd_fullstr, "short": cmnd_shortstr, "ascii": cmnd_ascii, "idstr": cmnd_idstr};
         }
 
         function parseButtons(msg) {
@@ -365,8 +394,5 @@
         }
       </style>
     </main>
-
-    <!-- You can also require other files to run in this process -->
-    <script src="renderer.js"></script>
   </body>
 </html>

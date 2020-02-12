@@ -16,11 +16,11 @@
 
   <body>
     <main class="main pt-2 px-1 m-0 mb-2 p-md-3 m-md-3">
-      <button class="float-left btn-arrow-left mx-3 btn btn-dark" onclick="history.back()">Zurück</button>
+      <button id="backButton" class="float-left btn-arrow-left mx-3 btn btn-dark" onclick="backButton()">Zurück</button>
       <h3 id="titleText" class="text-right">Makrotastatur - Taster bearbeiten</h3>
       <hr></hr>
 
-      <form id="programForm" action="#">
+      <form id="programForm" class="mb-5" action="#">
         <table id="programList" class='w-100 text-center'>
           <tr>
             <th style="border-bottom: 1px solid gray; border-right: 1px solid gray; width: 20%">
@@ -32,16 +32,77 @@
           </tr>
         </table>
         <div id="commandNavbar" class="m-0 mt-3 btn-group fixed-bottom row w-100">
-          <input  type="submit" class="btn btn-success" onclick="submitForm(null)"></input>
-          <button type="button" class="btn btn-dark"    onclick="if(addCommand(1) === false)alert('Etwas ging schief.')">String</button>
-          <button type="button" class="btn btn-dark"    onclick="if(addCommand(2) === false)alert('Etwas ging schief.')">Delay</button>
-          <button type="button" class="btn btn-dark"    onclick="if(addCommand(3) === false)alert('Etwas ging schief.')">Mod Key Press</button>
-          <button type="button" class="btn btn-dark"    onclick="if(addCommand(4) === false)alert('Etwas ging schief.')">Mod Key Release</button>
-          <button type="button" class="btn btn-danger">Record</button> <!--// TODO: open modal and record key combination -->
+          <input  type="submit" class="btn btn-success" onclick="sendButton()"></input>
+          <!-- TODO: We have the data to precudurally generate buttons... Commandid needs to be replaced with cmnd_idstr -->
+          <button type="button" class="btn btn-danger">Record</button> <!-- TODO: open modal and record key combination -->
         </div>
       </form>
 
       <script>
+        function backButton() {
+          console.log(commands)
+          window.Bridge.sendEvent("setCommandsObj", commands);
+          console.log(window.Bridge.getGlobal("commands"));
+
+          //location.href="selectButton.html"
+          history.back();
+        }
+
+        function serialOpenPort() {
+          if (!window.Bridge.isPortOpen()) {
+            var devicePath = localStorage.getItem('devicePath');
+            if (devicePath === undefined || devicePath == null) {
+              console.error("Oh oh! Sieht so aus als würde devicePath nicht im localStorage gesetzt sein.");
+              return;
+            }
+            console.log("Stelle Verbindung mit '"+devicePath+"' her.");
+
+            window.Bridge.setCOMPath(devicePath);
+
+
+            window.Bridge.onOpen = function() {
+              console.log("Verbindung zu Gerät '" + devicePath + "' geöffnet!");
+              sendButton();
+            };
+
+            window.Bridge.onDataReceive = (msg) => console.log("%cRECV: " + msg, "color: blue;");
+            window.Bridge.onDisconnect = () => {
+              console.error("%cPORT DISCONNECTED", "color: red;");
+              location.href="index.html";
+            }
+            window.Bridge.onClose = () => {
+              console.error("%cPORT CLOSED", "color: red;");
+              location.href="index.html";
+            }
+
+            window.Bridge.openSerialConnection();
+          }
+        }
+
+        function sendButton() {
+          if (!window.Bridge.isPortOpen()) {
+            serialOpenPort();
+            return;
+          }
+
+          window.Bridge.sendMessage("SETBUTTONS");
+          console.log("%cSEND: 'SETBUTTONS'", "color: orange;");
+
+          window.setTimeout( () => {
+            $("#programList .cmndTr").each( function() {
+              if ($(this).attr("commandid") == "CMND_MODKEYPRESS" || $(this).attr("commandid") == "CMND_MODKEYRELEASE") {
+                var send_cmnd_line = selectedButtonID + ";" + $(this).attr("commandid") + ";" + $("option:selected", this).val();
+                console.log("%c"+send_cmnd_line, "color: orange;");
+                window.Bridge.sendMessage(send_cmnd_line + '\n');
+              } else {
+                var send_cmnd_line = selectedButtonID + ";" + $(this).attr("commandid") + ";" + $("#value *:first-child", this).val(); 
+                console.log("%c"+send_cmnd_line, "color: orange;");
+                window.Bridge.sendMessage(send_cmnd_line + '\n');
+              }
+            });
+          }, 1500);
+        }
+
         function loadDarkMode() {
           // Get HTML head element
           var head = document.getElementsByTagName('HEAD')[0];
@@ -91,99 +152,268 @@
 
         window.addEventListener('DOMContentLoaded', () => {
           // IF DARK MODE ADD BOOTSWATCH CSS FILES
-          console.error(localStorage.getItem("dark_mode_active") + " " + window.Bridge.checkDarkMode());
-          if (window.Bridge.checkDarkMode() == true || localStorage.getItem("dark_mode_active") == "true") {
+          if (window.Bridge.isDarkMode == true || localStorage.getItem("dark_mode_active") == "true") {
             loadDarkMode();
           }
 
           $('#programForm').submit(function( event ) {
-            submitForm(event, this);
+            //submitForm(event, this);
+            event.preventDefault(true);
           });
 
+
+          var hideItem = false;
           Sortable.create(programList, {
             animation: 200,
             draggable: 'tr',
             sort: true,
             chosenClass: 'active',
             ghostClass: "ghost",
-            handle: "#commandlabel"
+            handle: "#commandlabel",
+            group: {
+              name: "trash"
+            },
+            onChange: function(evt){
+              if (hideItem) {
+                var el = evt.item;
+                $(el).show();
+                hideItem = false;
+              }
+            },
+            onStart: function (/**Event*/evt) {
+              var html = `<div id="droppable" style="border: 2px dashed #f60; min-height: 2rem;" class="col-12 text-center"><strong>Item hier herreinziehen, um das Item zu löschen.</strong></div>`;
+              $("#commandNavbar").append(html);
+              $("#droppable").hide();
+              $("#droppable").slideDown("fast");
+
+              Sortable.create(droppable, {
+                group: "trash",
+
+                onAdd: function (evt) {
+                  var el = evt.item;
+                  $(el).remove();
+                  hideItem = false;
+                },
+                onChange: function(evt){
+                  if (!hideItem) {
+                    var el = evt.item;
+                    $(el).hide();
+                    hideItem = true;
+                  }
+                }
+              });
+            },
+            onEnd: function (evt) {
+              $("#droppable").slideUp("fast", () => {
+                $("#droppable").remove();
+              });
+            }
           });
+
+          console.log("Prüfe ob Daten richtig angekommen sind...");
+
+          // Read objects.
+          console.log("commands: " + window.Bridge.getGlobal("commands")); // => commands obj!
+          console.log("buttonCommands: " + window.Bridge.getGlobal("buttonCommands")); // => buttonCommands obj!
+          console.log("selectedButtonID: " + window.Bridge.getGlobal("selectedButtonID")); // => selectedButtonID!
+          commands = window.Bridge.getGlobal("commands");
+          buttonCommands = window.Bridge.getGlobal("buttonCommands");
+          selectedButtonID = window.Bridge.getGlobal("selectedButtonID");
+
+          if (commands == null || $.isEmptyObject(commands)) {
+            console.error("'commands' ist fehlerhaft!");
+            alert("Es ist ein Fehler aufgetreten!");
+            location.href = "selectButton.html";
+          }
+          if (buttonCommands == null || $.isEmptyObject(buttonCommands)) {
+            console.error("'buttonCommands' ist fehlerhaft!");
+            alert("Es ist ein Fehler aufgetreten!");
+            location.href = "selectButton.html";
+          }
+          if (selectedButtonID == null) {
+            console.error("'selectedButtonID' ist fehlerhaft!");
+            alert("Es ist ein Fehler aufgetreten!");
+            location.href = "selectButton.html";
+          }
+          console.log("Jup, alles gut.");
+
+          precedurallyAddButtons();
+
+          listAddCommandsCache();
         });
 
-        function addCommand(commandid) {
+        function precedurallyAddButtons() {
+          var counter = 0;
+          for (const cmnd in commands) {
+            var btnCmnd_HTML = `
+              <button type="button" class="btn btn-dark" onclick="if(addCommand('`+cmnd+`') === false)alert('Etwas ging schief.')">`+commands[cmnd]['full']+`</button>
+            `;
+            $("#commandNavbar").append(btnCmnd_HTML);
+            counter++;
+          }
+        }
+
+        var selectedButtonID = -1;
+        // A dict which stores all commands and it's details
+        var commands = {};
+        // A dict which learns the commands of pressed buttons
+        var buttonCommands = {};
+
+        function listAddCommandsCache() {
+          $("#programList .cmndTr").remove();
+
+          buttonCommands[selectedButtonID].forEach(cmnd => {
+            var commandSpecificElement = "Oh... Ein Fehler ist aufgetreten!";
+
+            switch (cmnd['cmnd_str']) {
+              case 'CMND_STRING': {
+                commandSpecificElement = `
+                  <!-- pattern='[\\w,.!?+\\-#*\\s]+' -->
+                  <input value="`+cmnd['value']+`" name="string" class='p-1 m-0 mt-2 mx-2 form-control d-inline-block' type='text' wrap='off' pattern='[\\w,.!?+\\-#*\\s]+' style='max-width:95%; width:95%;'></input>
+                  <p class='text-muted text-right mr-3 pb-0 mb-0' style='font-size: 80%;'>do not use special characters except punctuation marks</p>
+                `;
+                break;
+              }
+              case 'CMND_DELAY': {
+                commandSpecificElement = `
+                  <input value="`+cmnd['value']+`" name="time" class="p-1 my-3 mx-2 form-control d-inline-block" min="0" style="max-width: 95%; width: 95%;" max="65536" type="number"></input>
+                `;
+                break;
+              }
+              case 'CMND_MODKEYPRESS':
+              case 'CMND_MODKEYRELEASE': {
+                commandSpecificElement = `
+                  <select class="form-control p-0 my-3 mx-2 d-inline-block selectList" style="max-width: 95%; width: 95%;">
+                    <option value="128">LEFT CTRL</option>
+                    <option value="129">LEFT SHIFT</option>
+                    <option value="130">LEFT ALT</option>
+                    <option value="131">LEFT GUI</option>
+                    <option value="132">RIGHT CTRL</option>
+                    <option value="133">RIGHT SHIFT</option>
+                    <option value="134">RIGHT ALT</option>
+                    <option value="135">RIGHT GUI</option>
+                    <option value="176">RETURN</option>
+                    <option value="177">ESC</option>
+                    <option value="178">BACKSPACE</option>
+                    <option value="179">TAB</option>
+                    <option value="215">RIGHT ARROW</option>
+                    <option value="216">LEFT ARROW</option>
+                    <option value="217">DOWN ARROW</option>
+                    <option value="218">UP ARROW</option>
+                    <option value="209">INSERT</option>
+                    <option value="212">DELETE</option>
+                    <option value="211">PAGE UP</option>
+                    <option value="214">PAGE DOWN</option>
+                    <option value="210">HOME</option>
+                    <option value="213">END</option>
+                    <option value="193">CAPS LOCK</option>
+                    <option value="194">F1</option>
+                    <option value="195">F2</option>
+                    <option value="196">F3</option>
+                    <option value="197">F4</option>
+                    <option value="198">F5</option>
+                    <option value="199">F6</option>
+                    <option value="200">F7</option>
+                    <option value="201">F8</option>
+                    <option value="202">F9</option>
+                    <option value="203">F10</option>
+                    <option value="204">F11</option>
+                    <option value="205">F12</option>
+                  </select>
+                `;
+              }
+            }
+            var html_tablerow = `
+                <tr commandid="`+cmnd['cmnd_str']+`" style="width: 75%; border-top: 1px solid gray;" class='cmndTr p-0 pl-2 pr-2 pt-2 m-0'>
+                  <td id="commandlabel" class='m-0 p-1' style="border-right: 1px solid gray;">
+                    <img src="imgs/movable.png" alt="::" style="max-width: 20px; filter: opacity(50%);" class="m-0 p-0 d-inline-block float-left"></img>
+                    `+commands[cmnd['cmnd_str']]["full"]+`
+                  </td>
+                  <td id="value" class="p-1">
+                    ` + commandSpecificElement + `
+                  </td>
+                </tr>`;
+            $("#programList").append(html_tablerow);
+            if (cmnd['cmnd_str'] == "CMND_MODKEYRELEASE" || cmnd['cmnd_str'] == "CMND_MODKEYPRESS") {
+              $(".selectList [value='"+cmnd['value']+"']:last").attr("selected", "true");
+            }
+          });
+        }
+
+        function addCommand(cmnd_idstr) {
           var html_tablerow = `
-              <tr commandid="<CMNDID>" style="width: 75%; border-top: 1px solid gray;" class='p-0 pl-2 pr-2 pt-2 m-0'>
+              <tr commandid="`+cmnd_idstr+`" style="width: 75%; border-top: 1px solid gray;" class='cmndTr p-0 pl-2 pr-2 pt-2 m-0'>
                 <td id="commandlabel" class='m-0 p-0' style="border-right: 1px solid gray;">
-                  <img src="imgs/movable.png" alt="::" style="max-width: 20px; filter: opacity(50%);" class="m-0 p-0 d-inline-block float-left"></img> <COMMAND>
+                  <img src="imgs/movable.png" alt="::" style="max-width: 20px; filter: opacity(50%);" class="m-0 p-0 d-inline-block float-left"></img> `+commands[cmnd_idstr]['full']+`
                 </td>
                 <td id="value">
                   <VALUE>
                 </td>
               </tr>`;
 
-          if (commandid == 1) {
-            html_tablerow = html_tablerow.replace("<COMMAND>", "String");
-            html_tablerow = html_tablerow.replace("<VALUE>",
-                                    `<!-- pattern='[\\w,.!?+\\-#*\\s]+' -->
-                                     <input name="string" class='p-1 m-0 mt-2 mx-2 form-control d-inline-block' type='text' wrap='off' pattern='[\\w,.!?+\\-#*\\s]+' style='max-width:95%; width:95%;'></input>
-                                     <p class='text-muted text-right mr-3 pb-0 mb-0' style='font-size: 80%;'>do not use special characters except punctuation marks</p>
-            `);
-          } else if (commandid == 2) {
-            html_tablerow = html_tablerow.replace("<COMMAND>", "Delay");
-            html_tablerow = html_tablerow.replace("<VALUE>",
-                                    `<input name="time" class="p-1 my-3 mx-2 form-control d-inline-block" min="0" style="max-width: 95%; width: 95%;" max="65536" type="number"></input>
-            `);
-          } else if (commandid == 3) {
-            html_tablerow = html_tablerow.replace("<COMMAND>", "Mod Key Press");
-          } else if (commandid == 4) {
-            html_tablerow = html_tablerow.replace("<COMMAND>", "Mod Key Release");
-          } else {
-            return false;
+          switch (cmnd_idstr) {
+            case 'CMND_STRING': {
+              html_tablerow = html_tablerow.replace("<VALUE>",
+                                      `<!-- pattern='[\\w,.!?+\\-#*\\s]+' -->
+                                      <input name="string" class='p-1 m-0 mt-2 mx-2 form-control d-inline-block' type='text' wrap='off' pattern='[\\w,.!?+\\-#*\\s]+' style='max-width:95%; width:95%;'></input>
+                                      <p class='text-muted text-right mr-3 pb-0 mb-0' style='font-size: 80%;'>do not use special characters except punctuation marks</p>
+              `);
+              break;
+            }
+            case 'CMND_DELAY': {
+              html_tablerow = html_tablerow.replace("<VALUE>",
+                                      `<input name="time" class="p-1 my-3 mx-2 form-control d-inline-block" min="0" style="max-width: 95%; width: 95%;" max="65536" type="number"></input>
+              `);
+              break;
+            }
+            case 'CMND_MODKEYPRESS':
+            case 'CMND_MODKEYRELEASE': {
+              html_tablerow = html_tablerow.replace("<VALUE>",`
+                <select class="form-control p-0 my-3 mx-2 d-inline-block selectList" style="max-width: 95%; width: 95%;">
+                  <option value="128">LEFT CTRL</option>
+                  <option value="129">LEFT SHIFT</option>
+                  <option value="130">LEFT ALT</option>
+                  <option value="131">LEFT GUI</option>
+                  <option value="132">RIGHT CTRL</option>
+                  <option value="133">RIGHT SHIFT</option>
+                  <option value="134">RIGHT ALT</option>
+                  <option value="135">RIGHT GUI</option>
+                  <option value="176">RETURN</option>
+                  <option value="177">ESC</option>
+                  <option value="178">BACKSPACE</option>
+                  <option value="179">TAB</option>
+                  <option value="215">RIGHT ARROW</option>
+                  <option value="216">LEFT ARROW</option>
+                  <option value="217">DOWN ARROW</option>
+                  <option value="218">UP ARROW</option>
+                  <option value="209">INSERT</option>
+                  <option value="212">DELETE</option>
+                  <option value="211">PAGE UP</option>
+                  <option value="214">PAGE DOWN</option>
+                  <option value="210">HOME</option>
+                  <option value="213">END</option>
+                  <option value="193">CAPS LOCK</option>
+                  <option value="194">F1</option>
+                  <option value="195">F2</option>
+                  <option value="196">F3</option>
+                  <option value="197">F4</option>
+                  <option value="198">F5</option>
+                  <option value="199">F6</option>
+                  <option value="200">F7</option>
+                  <option value="201">F8</option>
+                  <option value="202">F9</option>
+                  <option value="203">F10</option>
+                  <option value="204">F11</option>
+                  <option value="205">F12</option>
+                </select>
+              `);
+              break;
+            }
+            default: {
+              console.error("cmnd_idstr is invalid!");
+              return false;
+            }
           }
-
-          if (commandid == 3 || commandid == 4) {
-            html_tablerow = html_tablerow.replace("<VALUE>",`
-              <select class="form-control p-0 my-3 mx-2 d-inline-block selectList" style="max-width: 95%; width: 95%;">
-                <option>128 - LEFT CTRL</option>
-                <option>129 - LEFT SHIFT</option>
-                <option>130 - LEFT ALT</option>
-                <option>131 - LEFT GUI</option>
-                <option>132 - RIGHT CTRL</option>
-                <option>133 - RIGHT SHIFT</option>
-                <option>134 - RIGHT ALT</option>
-                <option>135 - RIGHT GUI</option>
-                <option>176 - RETURN</option>
-                <option>177 - ESC</option>
-                <option>178 - BACKSPACE</option>
-                <option>179 - TAB</option>
-                <option>215 - RIGHT ARROW</option>
-                <option>216 - LEFT ARROW</option>
-                <option>217 - DOWN ARROW</option>
-                <option>218 - UP ARROW</option>
-                <option>209 - INSERT</option>
-                <option>212 - DELETE</option>
-                <option>211 - PAGE UP</option>
-                <option>214 - PAGE DOWN</option>
-                <option>210 - HOME</option>
-                <option>213 - END</option>
-                <option>193 - CAPS LOCK</option>
-                <option>194 - F1</option>
-                <option>195 - F2</option>
-                <option>196 - F3</option>
-                <option>197 - F4</option>
-                <option>198 - F5</option>
-                <option>199 - F6</option>
-                <option>200 - F7</option>
-                <option>201 - F8</option>
-                <option>202 - F9</option>
-                <option>203 - F10</option>
-                <option>204 - F11</option>
-                <option>205 - F12</option>
-              </select>`
-            );
-          }
-
-          html_tablerow = html_tablerow.replace("<CMNDID>", commandid);
           $("#programList").append(html_tablerow);
 
           return true;
@@ -209,8 +439,5 @@
         margin-bottom: 0px !important;
       }
     </style>
-
-    <!-- You can also require other files to run in this process -->
-    <script src="../renderer.js"></script>
   </body>
 </html>

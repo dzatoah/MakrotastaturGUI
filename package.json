@@ -1,7 +1,7 @@
 {
   "name": "makrotastatur",
-  "productName": "Makrotastatur GUI",
-  "version": "v1.1.22-alpha",
+  "productName": "Makrotastatur",
+  "version": "1.1.23-alpha",
   "description": "Programmiere deine Makrotastatur mit diesem Programm.",
   "main": "src/main.js",
   "scripts": {
@@ -46,8 +46,10 @@
     "bootstrap": "latest",
     "bootswatch": "^4.4.1",
     "electron-compile": "latest",
+    "electron-is-dev": "^1.1.0",
     "electron-squirrel-startup": "^1.0.0",
     "jquery": "latest",
+    "jqueryui": "^1.11.1",
     "mdbootstrap": "latest",
     "popper.js": "latest",
     "serialport": "latest",
