@@ -32,7 +32,7 @@
           </tr>
         </table>
         <div id="commandNavbar" class="m-0 mt-3 btn-group fixed-bottom row w-100">
-          <input  type="submit" class="btn btn-success" onclick="sendButton()"></input>
+          <input  type="submit" class="btn btn-success"></input>
           <!-- TODO: We have the data to precudurally generate buttons... Commandid needs to be replaced with cmnd_idstr -->
           <button type="button" class="btn btn-danger">Record</button> <!-- TODO: open modal and record key combination -->
         </div>
@@ -158,6 +158,7 @@
 
           $('#programForm').submit(function( event ) {
             //submitForm(event, this);
+            sendButton();
             event.preventDefault(true);
           });
 
@@ -268,8 +269,8 @@
             switch (cmnd['cmnd_str']) {
               case 'CMND_STRING': {
                 commandSpecificElement = `
-                  <!-- pattern='[\\w,.!?+\\-#*\\s]+' -->
-                  <input value="`+cmnd['value']+`" name="string" class='p-1 m-0 mt-2 mx-2 form-control d-inline-block' type='text' wrap='off' pattern='[\\w,.!?+\\-#*\\s]+' style='max-width:95%; width:95%;'></input>
+                  <!-- pattern='[\\w!?.,:;\"$%&/\\()=ßÖÄÜöäü_-'#*+\`^\\s]+' -->
+                  <input value="`+cmnd['value']+`" name="string" class='p-1 m-0 mt-2 mx-2 form-control d-inline-block' type='text' wrap='off' pattern='[\\w!?\\.,:;\"$%&/\\()=ßÖÄÜöäü_\\-#*+\`^\\s]+' style='max-width:95%; width:95%;'></input>
                   <p class='text-muted text-right mr-3 pb-0 mb-0' style='font-size: 80%;'>do not use special characters except punctuation marks</p>
                 `;
                 break;
@@ -353,11 +354,11 @@
 
           switch (cmnd_idstr) {
             case 'CMND_STRING': {
-              html_tablerow = html_tablerow.replace("<VALUE>",
-                                      `<!-- pattern='[\\w,.!?+\\-#*\\s]+' -->
-                                      <input name="string" class='p-1 m-0 mt-2 mx-2 form-control d-inline-block' type='text' wrap='off' pattern='[\\w,.!?+\\-#*\\s]+' style='max-width:95%; width:95%;'></input>
-                                      <p class='text-muted text-right mr-3 pb-0 mb-0' style='font-size: 80%;'>do not use special characters except punctuation marks</p>
-              `);
+              html_tablerow = html_tablerow.replace("<VALUE>",`
+                  <!-- pattern='[\\w!?.,:;\"$%&/\\()=ßÖÄÜöäü_-'#*+\`^\\s]+' -->
+                  <input name="string" class='p-1 m-0 mt-2 mx-2 form-control d-inline-block' type='text' wrap='off' pattern='[\\w!?\\.,:;\"$%&/\\()=ßÖÄÜöäü_\\-#*+\`^\\s]+' style='max-width:95%; width:95%;'></input>
+                  <p class='text-muted text-right mr-3 pb-0 mb-0' style='font-size: 80%;'>do not use special characters except punctuation marks</p>
+                `);
               break;
             }
             case 'CMND_DELAY': {
