@@ -26,8 +26,8 @@
             <h5>Technische Informationen</h5>
             <hr class="p-0 mt-0"></hr>
 
-            <p>Hardware-revision: <b>1</b></p>
-            <p>Softwareversion:  <b>1.0</b></p>
+            <p>Hardware-revision: <b id="hardwarerevision">Laden...</b></p>
+            <p>Softwareversion:  <b  id="softwareversion">Laden...</b></p>
             <p>EEPROM-Speicher (bytes): <b>1024</b></p>
           </div>
         </div>
@@ -53,16 +53,16 @@
 
         <div id="buttonSelectList" class="sticky-top col-6 col-md-4 order-2 pl-0 pr-1 pr-sm-3 btn-group-vertical align-self-start">
           <div class="btn-group mb-1">
-            <button id="button5" onclick="loadButton(5)" class="disabled btn btn-dark mr-1">Taster 6</button>
-            <button id="button4" onclick="loadButton(4)" class="disabled btn btn-dark     ">Taster 5</button>
+            <button id="button0" onclick="loadButton(0)" class="disabled btn btn-dark mr-1">Taster 1</button>
+            <button id="button1" onclick="loadButton(1)" class="disabled btn btn-dark     ">Taster 2</button>
           </div>
           <div class="btn-group mb-1">
-            <button id="button3" onclick="loadButton(3)" class="disabled btn btn-dark mr-1">Taster 4</button>
-            <button id="button2" onclick="loadButton(2)" class="disabled btn btn-dark     ">Taster 3</button>
+            <button id="button2" onclick="loadButton(2)" class="disabled btn btn-dark mr-1">Taster 3</button>
+            <button id="button3" onclick="loadButton(3)" class="disabled btn btn-dark     ">Taster 4</button>
           </div>
           <div class="btn-group">
-            <button id="button1" onclick="loadButton(1)" class="disabled btn btn-dark mr-1">Taster 2</button>
-            <button id="button0" onclick="loadButton(0)" class="disabled btn btn-dark     ">Taster 1</button>
+            <button id="button4" onclick="loadButton(4)" class="disabled btn btn-dark mr-1">Taster 5</button>
+            <button id="button5" onclick="loadButton(5)" class="disabled btn btn-dark     ">Taster 6</button>
           </div>
         </div>
       </div>
@@ -83,6 +83,7 @@
         }
 
         var timeoutHandle;
+        var getCmndsTimeoutID;
 
         function sendMessageGetButtons(){
           buttonCommands = {};
@@ -157,6 +158,13 @@
           }
         });
 
+        function getCmndsTimeoutFunction() {
+          selectedMode = "getVersion";
+
+          console.log("%cSEND: 'GETVERSION'", "color: orange;");
+          window.Bridge.sendMessage("GETVERSION");
+        }
+
         function serialOpenPort() {
           if (!window.Bridge.isPortOpen()) {
             var devicePath = localStorage.getItem('devicePath');
@@ -184,6 +192,7 @@
                 selectedMode = "getCmnds";
                 console.log("%cSEND: 'GETCMNDS'", "color: orange;");
                 window.Bridge.sendMessage("GETCMNDS");
+                getCmndsTimeoutID = setTimeout(getCmndsTimeoutFunction, 1500);
               }
 
               timeoutHandle = window.setTimeout(sendMessageGetButtons, 1500);
@@ -272,9 +281,13 @@
           }
 
           if (selectedMode === "getCmnds") {
+            clearTimeout(getCmndsTimeoutID);
+            getCmndsTimeoutID = setTimeout(getCmndsTimeoutFunction, 3000);
             parseCommands(msg);
           } else if (selectedMode === "getButtons") {
             parseButtons(msg);
+          } else if (selectedMode === "getVersion") {
+            parseVersion(msg);
           }
         }
 
@@ -306,6 +319,17 @@
           }
 
           console.warn(buttonCommands);
+        }
+
+        function parseVersion(msg) {
+          // Format: Softwareversion; Hardwareversion
+          msg = msg.split(";", 2);
+          var softwareVersion = msg[0];
+          var hardwareVersion = msg[1];
+
+          console.log("%cBoard meldet Softwareversion: "+softwareVersion+" und Hardwareversion: "+hardwareVersion, "color: green;");
+          $("#hardwarerevision").html(hardwareVersion);
+          $("#softwareversion").html(softwareVersion);
         }
       </script>
 

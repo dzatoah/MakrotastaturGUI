@@ -48,6 +48,7 @@
           history.back();
         }
 
+        var sendTimeoutHandle;
         function serialOpenPort() {
           if (!window.Bridge.isPortOpen()) {
             var devicePath = localStorage.getItem('devicePath');
@@ -65,7 +66,11 @@
               sendButton();
             };
 
-            window.Bridge.onDataReceive = (msg) => console.log("%cRECV: " + msg, "color: blue;");
+            window.Bridge.onDataReceive = (msg) => {
+              console.log("%cRECV: " + msg, "color: blue;");
+              clearTimeout(sendTimeoutHandle);
+              sendTimeoutHandle = setTimeout(sendAfterFunction, 3000);
+            }
             window.Bridge.onDisconnect = () => {
               console.error("%cPORT DISCONNECTED", "color: red;");
               location.href="index.html";
@@ -79,11 +84,21 @@
           }
         }
 
+        function sendAfterFunction () {
+          $("#commandNavbar .btn").each(function(){
+            $(this).removeClass("disabled");
+          });
+        }
+
         function sendButton() {
           if (!window.Bridge.isPortOpen()) {
             serialOpenPort();
             return;
           }
+
+          $("#commandNavbar .btn").each(function(){
+            $(this).addClass("disabled");
+          });
 
           window.Bridge.sendMessage("SETBUTTONS");
           console.log("%cSEND: 'SETBUTTONS'", "color: orange;");
@@ -100,6 +115,7 @@
                 window.Bridge.sendMessage(send_cmnd_line + '\n');
               }
             });
+            sendTimeoutHandle = setTimeout(sendAfterFunction, 3000);
           }, 1500);
         }
 
@@ -158,10 +174,11 @@
 
           $('#programForm').submit(function( event ) {
             //submitForm(event, this);
-            sendButton();
+            if (!$("#commandNavbar .btn-success").hasClass("disabled")) {
+              sendButton();
+            }
             event.preventDefault(true);
           });
-
 
           var hideItem = false;
           Sortable.create(programList, {
@@ -247,7 +264,7 @@
           var counter = 0;
           for (const cmnd in commands) {
             var btnCmnd_HTML = `
-              <button type="button" class="btn btn-dark" onclick="if(addCommand('`+cmnd+`') === false)alert('Etwas ging schief.')">`+commands[cmnd]['full']+`</button>
+              <button type="button" class="btn btn-dark" onclick="if(!$(this).hasClass('disabled') && addCommand('`+cmnd+`') === false)alert('Etwas ging schief.')">`+commands[cmnd]['full']+`</button>
             `;
             $("#commandNavbar").append(btnCmnd_HTML);
             counter++;
